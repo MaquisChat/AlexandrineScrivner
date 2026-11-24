@@ -6,4 +6,9 @@ The design is in `docs/superpowers/specs/`. Start with `2026-11-23-field-noteboo
 
 The work is done from written plans in `docs/superpowers/plans/`, one stage at a time. Decisions made along the way are recorded in `docs/adr/`.
 
+Two parts need no Mac and are checked automatically on every push:
+
+- `Core/` is the part of the recorder that has nothing to do with the screen or the microphone: times, ids, file names, the session's timeline, and reading and writing the session folder. Check it with `swift test --package-path Core`.
+- `format/` defines the session folder that the recorder writes and the research workbench reads, with a worked example. See `format/README.md`.
+
 Building the app needs a Mac. The one-time setup is described in plain language in `docs/guides/mac-setup.md`.
