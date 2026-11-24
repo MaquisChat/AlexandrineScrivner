@@ -51,6 +51,10 @@ Worked so far in a cloud session on Linux. **Nothing has run on the Mac or on a 
 
 **To resume on the Mac:** do Task 1 steps 7 and 8, then continue from the first unticked step of each task in order.
 
+**Update, later on 2026-11-24: the test app now compiles on a real Mac.** `tools/mac-build.sh` was run on a Mac hosted by GitHub (macOS 15.7, Xcode 26.3, iOS 26.2 SDK; the "Mac checks" workflow, `.github/workflows/mac.yml`). Every step passed at the first attempt: the setup check (XcodeGen 2.46.0 and ExifTool fetched and verified), the Core and SpikeKit tests, project generation, and an unsigned compile of the test app for a device (`** BUILD SUCCEEDED **`, `RESULT: OK`). So the app code under `spike/App/` is now known to compile against Apple's SDKs, and XcodeGen 2.46.0 is known to work with Xcode 26.3. This runs again on every push.
+
+What that does not cover, and still needs the owner's Mac and devices: Xcode 27 (needed to install on devices running version 27; the hosted Mac had 26.3, so the script's minimum versions were lowered for that run only), signing with the owner's Personal Team, installing, every `xcrun devicectl` call, and all of the test runs in Task 8.
+
 **Decisions taken while executing, where they differ from the text below:**
 
 1. `tools/mac-lib.sh` was added: shared device lookup (`find_device`), a `scrub` filter that removes identifiers, names, the signing team and the home folder from everything the scripts print or log, and `use_installed_xcode`.
