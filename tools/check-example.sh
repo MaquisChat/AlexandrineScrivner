@@ -2,7 +2,8 @@
 # Proves the session checker does its job, using the worked example in format/examples:
 #   1. the example itself passes, media tags included;
 #   2. a copy with one photo's time moved by a minute fails, and the report says why;
-#   3. a copy with a place written into a clip made with location off fails, and says why.
+#   3. a copy with a place written into a clip made with location off fails, and says why;
+#   4. the same when the place is tucked into a part of a file the recorder never uses.
 #
 # Last line: "EXAMPLE CHECK OK" or "EXAMPLE CHECK FAILED: <why>".
 # Works on a Mac and on Linux. Set EXIFTOOL to use an ExifTool you already have.
@@ -75,5 +76,13 @@ cp -R "$example" "$work/place/"
   || fail "could not change the copy's clip"
 run_check "$work/place/$name"
 expect_failure "unexpected place" "video/clip-0002.mov: carries a location although session.json has none for it"
+
+echo "== 4. a place hidden in an unusual part of an audio file"
+mkdir "$work/hidden"
+cp -R "$example" "$work/hidden/"
+"$exiftool" -q -overwrite_original "-UserData:GPSCoordinates=27.7046, 85.3076" "$work/hidden/$name/audio/audio-002.m4a" \
+  || fail "could not change the copy's audio"
+run_check "$work/hidden/$name"
+expect_failure "hidden place" "audio/audio-002.m4a: carries a location; audio is never located (found in UserData:GPSCoordinates)"
 
 echo "EXAMPLE CHECK OK"

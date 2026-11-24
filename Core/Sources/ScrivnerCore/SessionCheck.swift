@@ -3,20 +3,37 @@ import Foundation
 /// Checks a session folder against its own `session.json`: that the manifest reads and is
 /// consistent, that every listed file is there and matches its checksum, and that nothing else
 /// has crept in. What the media files say about themselves is `MediaCheck`'s job.
+/// What checking one folder found.
+public struct SessionCheckResult: Sendable {
+    /// The manifest, when it could be read.
+    public let manifest: Manifest?
+    /// Everything found wrong, in a steady order.
+    public let findings: [CheckFinding]
+    /// True when the manifest was read, no span is open and every listed file has its checksum.
+    public let isFinished: Bool
+}
+
 public enum SessionCheck {
+    /// File endings the workbench's device import picks up, whatever `session.json` says.
+    static let workbenchImports: Set<String> = ["heic", "heif", "jpg", "jpeg", "png", "dng", "cr2", "cr3", "nef", "arw", "raf", "orf",
+                                                "mov", "mp4", "m4v", "m4a", "wav", "mp3"]
+
     static let unfinishedMessage = "the session was not finished: it was still recording, was cut off, or its files have no checksums yet. Open it in the app so it can be finished."
 
     /// The manifest, when it could be read, and everything found wrong, in a steady order.
-    public static func folder(_ folder: SessionFolder) -> (manifest: Manifest?, findings: [CheckFinding]) {
+    public static func folder(_ folder: SessionFolder) -> SessionCheckResult {
+        func unread(_ message: String) -> SessionCheckResult {
+            SessionCheckResult(manifest: nil, findings: [CheckFinding(.problem, "session.json", message)], isFinished: false)
+        }
         var found: [CheckFinding] = []
         let fileManager = FileManager.default
 
         // 1. session.json is there and is text.
         guard let data = fileManager.contents(atPath: folder.sessionJSON.path) else {
-            return (nil, [CheckFinding(.problem, "session.json", "is missing")])
+            return unread("is missing")
         }
         guard let text = String(data: data, encoding: .utf8) else {
-            return (nil, [CheckFinding(.problem, "session.json", "is not readable text")])
+            return unread("is not readable text")
         }
 
         // 2. It reads, strictly.
@@ -25,11 +42,11 @@ public enum SessionCheck {
             manifest = try ManifestCoding.decode(text)
         } catch let problem as ManifestDecodeError {
             let place = problem.path.isEmpty ? "" : "\(problem.path): "
-            return (nil, [CheckFinding(.problem, "session.json", place + problem.message)])
+            return unread(place + problem.message)
         } catch let problem as JSONParseError {
-            return (nil, [CheckFinding(.problem, "session.json", "is not valid JSON: \(problem.message)")])
+            return unread("is not valid JSON: \(problem.message)")
         } catch {
-            return (nil, [CheckFinding(.problem, "session.json", "could not be read: \(error)")])
+            return unread("could not be read: \(error)")
         }
 
         // 3. Finished means no open span and a checksum for every file. An unfinished session gets
@@ -75,7 +92,11 @@ public enum SessionCheck {
         // 6. Nothing else is in the folder. What macOS leaves behind is not counted.
         for path in filesOnDisk(under: folder.url) where !listedPaths.contains(path) && path != "session.json" && path != "notes.md" {
             if isMacLitter(path) { continue }
-            found.append(CheckFinding(.warning, path, "is in the folder but not listed in session.json"))
+            // The workbench picks media up by its file ending, listed or not.
+            let ending = path.split(separator: ".").last.map { $0.lowercased() } ?? ""
+            let imported = path.contains(".") && workbenchImports.contains(ending)
+            found.append(CheckFinding(.warning, path, "is in the folder but not listed in session.json"
+                                      + (imported ? "; the workbench would still import it" : "")))
         }
 
         // 7. notes.md says what session.json says.
@@ -95,7 +116,41 @@ public enum SessionCheck {
                                       "is named \"\(actualName)\"; its start time and title give \"\(expectedName)\""))
         }
 
-        return (manifest, found)
+        return SessionCheckResult(manifest: manifest, findings: found, isFinished: isFinished)
+    }
+
+    /// The session folders directly under `root`, in name order: every folder that holds a
+    /// `session.json`, and every folder that looks like a session but has lost it (an interrupted
+    /// copy), so that it is reported and not passed over. A folder looks like a session when it is
+    /// named the way the recorder names them or holds one of a session's own subfolders.
+    public static func sessionFolders(in root: URL) -> [SessionFolder] {
+        let fileManager = FileManager.default
+        let names = ((try? fileManager.contentsOfDirectory(atPath: root.path)) ?? []).sorted()
+        var result: [SessionFolder] = []
+        for name in names where !name.hasPrefix(".") {
+            let url = root.appendingPathComponent(name, isDirectory: true)
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else { continue }
+            let hasManifest = fileManager.fileExists(atPath: url.appendingPathComponent("session.json").path)
+            let hasSessionParts = SessionStore.subfolders.contains { part in
+                var partIsDirectory: ObjCBool = false
+                return fileManager.fileExists(atPath: url.appendingPathComponent(part).path, isDirectory: &partIsDirectory) && partIsDirectory.boolValue
+            }
+            if hasManifest || hasSessionParts || looksLikeASessionName(name) {
+                result.append(SessionFolder(url: url))
+            }
+        }
+        return result
+    }
+
+    /// `2026-11-23 1042 … [455d]`: a date, a time, and four characters in square brackets at the end.
+    static func looksLikeASessionName(_ name: String) -> Bool {
+        let bytes = Array(name.utf8)
+        guard bytes.count >= 22 else { return false }
+        func digits(_ range: Range<Int>) -> Bool { bytes[range].allSatisfy { $0 >= 48 && $0 <= 57 } }
+        guard digits(0..<4), bytes[4] == 45, digits(5..<7), bytes[7] == 45, digits(8..<10), bytes[10] == 32,
+              digits(11..<15), bytes[15] == 32 else { return false }
+        return bytes[bytes.count - 1] == 93 && bytes[bytes.count - 6] == 91
     }
 
     /// Every file the manifest lists, with the checksum it gives for it.

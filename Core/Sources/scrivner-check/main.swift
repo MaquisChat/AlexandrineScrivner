@@ -53,9 +53,8 @@ func readMedia(in folder: SessionFolder, paths: [String], exiftool: String) -> M
     let data = output.fileHandleForReading.readDataToEndOfFile()
     process.waitUntilExit()
 
-    guard let text = String(data: data, encoding: .utf8), !text.isEmpty else {
-        return .failed("ExifTool printed nothing")
-    }
+    guard !data.isEmpty else { return .failed("ExifTool printed nothing") }
+    guard let text = String(data: data, encoding: .utf8) else { return .failed("ExifTool's output could not be read as text") }
     do {
         var facts: [String: MediaFacts] = [:]
         for (source, value) in try ExifToolOutput.parse(text) {
@@ -74,32 +73,37 @@ guard let arguments = CheckArguments(Array(CommandLine.arguments.dropFirst())) e
     exit(2)
 }
 
-// A folder with no session.json of its own, but with session folders inside it, is a folder of sessions.
-var sessions: [SessionFolder] = []
-for path in arguments.folders {
-    let url = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
-    let folder = SessionFolder(url: url)
-    let inside = SessionStore.sessions(in: url)
-    if FileManager.default.fileExists(atPath: folder.sessionJSON.path) || inside.isEmpty {
-        sessions.append(folder)
-    } else {
-        sessions.append(contentsOf: inside.reversed())   // oldest first
-    }
-}
-
 let exiftool = arguments.media ? findExifTool(arguments.exiftool) : nil
+var sessionCount = 0
 var problems = 0
 var warnings = 0
 
-for session in sessions {
-    var (manifest, findings) = SessionCheck.folder(session)
-    if arguments.media, let manifest {
-        if let exiftool {
+@MainActor
+func report(_ name: String, _ findings: [CheckFinding], _ media: MediaStatus) {
+    sessionCount += 1
+    problems += findings.filter { $0.severity == .problem }.count
+    warnings += findings.filter { $0.severity == .warning }.count
+    print(CheckReport.render(folderName: name, findings: findings, media: media), terminator: "")
+}
+
+@MainActor
+func check(_ session: SessionFolder) {
+    let result = SessionCheck.folder(session)
+    var findings = result.findings
+    var media: MediaStatus = arguments.media ? .failed : .notAsked
+    if arguments.media, let manifest = result.manifest {
+        if !result.isFinished {
+            // Files of a session that was cut off may be half written; the one finding above says what to do.
+            media = .skippedUnfinished
+        } else if let exiftool {
             switch readMedia(in: session, paths: MediaCheck.mediaPaths(in: manifest), exiftool: exiftool) {
             case .facts(let facts):
-                // A file that is not in the folder has already been reported; say nothing more about it.
-                let missing = Set(findings.filter { $0.message.hasPrefix("is listed in session.json but is not in the folder") }.map(\.subject))
-                findings += MediaCheck.findings(for: manifest, facts: facts).filter { !missing.contains($0.subject) }
+                // A file that is missing or empty has already been reported; say nothing more about it.
+                let alreadyReported = Set(findings.filter {
+                    $0.message.hasPrefix("is listed in session.json but is not in the folder") || $0.message == "is empty"
+                }.map(\.subject))
+                findings += MediaCheck.findings(for: manifest, facts: facts).filter { !alreadyReported.contains($0.subject) }
+                media = .checked
             case .failed(let reason):
                 findings.append(CheckFinding(.problem, "media tags", "could not be checked: \(reason)"))
             }
@@ -108,15 +112,38 @@ for session in sessions {
                                          "could not be checked: ExifTool was not found. Run tools/get-exiftool.sh, then pass its last line with --exiftool."))
         }
     }
-    problems += findings.filter { $0.severity == .problem }.count
-    warnings += findings.filter { $0.severity == .warning }.count
-    // The hint to run again with --media is only for runs that did not ask for it.
-    print(CheckReport.render(folderName: session.url.lastPathComponent, findings: findings,
-                             mediaChecked: arguments.media), terminator: "")
+    report(session.url.lastPathComponent, findings, media)
 }
 
-print(CheckReport.verdict(sessions: sessions.count, problems: problems, warnings: warnings))
-exit(problems == 0 && !sessions.isEmpty ? 0 : 1)
+for path in arguments.folders {
+    let url = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+    var isDirectory: ObjCBool = false
+    guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+        report(url.lastPathComponent, [CheckFinding(.problem, "folder", "there is nothing at \(path)")], .failed)
+        continue
+    }
+    guard isDirectory.boolValue else {
+        let hint = url.pathExtension.lowercased() == "zip" ? " Open the zip first, then check the folder that comes out of it." : ""
+        report(url.lastPathComponent, [CheckFinding(.problem, "folder", "is a file, not a folder.\(hint)")], .failed)
+        continue
+    }
+    let folder = SessionFolder(url: url)
+    if FileManager.default.fileExists(atPath: folder.sessionJSON.path) {
+        check(folder)
+        continue
+    }
+    // No session.json of its own: a folder of sessions, each checked, including any that has
+    // lost its session.json. A folder with no sessions in it is checked as one, and says so.
+    let inside = SessionCheck.sessionFolders(in: url)
+    if inside.isEmpty {
+        check(folder)
+    } else {
+        inside.forEach(check)
+    }
+}
+
+print(CheckReport.verdict(sessions: sessionCount, problems: problems, warnings: warnings))
+exit(problems == 0 && sessionCount > 0 ? 0 : 1)
 
 #else
 

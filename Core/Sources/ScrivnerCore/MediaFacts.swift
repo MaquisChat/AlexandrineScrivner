@@ -9,8 +9,13 @@ public struct MediaFacts: Equatable, Sendable {
     public var created: ExifDate?
     /// Audio and video: Apple's creation-date key, which carries the local offset.
     public var creationDate: ExifDate?
-    /// Where the file says it was made. `accuracyM` is always nil; files do not carry it.
+    /// Where the file says it was made, read from where spec 6.3 puts it: the EXIF GPS tags of a
+    /// photo, or Apple's location key of a clip. `accuracyM` is always nil; files do not carry it.
     public var location: GeoPoint?
+    /// Any other tag in the file that holds a place, as `Group:Tag`, sorted. The workbench reads a
+    /// place from whichever part of a file holds one, so a place tucked away here still counts.
+    /// Also lists Apple's location key when it is there but cannot be read.
+    public var strayLocationTags: [String] = []
     public var make: String?
     public var model: String?
     public var lens: String?
@@ -32,9 +37,11 @@ public enum ExifToolOutput {
     /// Everything before the file names on ExifTool's command line.
     ///
     /// `-n` gives plain numbers, `-G1` names each tag's group, and `QuickTimeUTC` makes ExifTool treat
-    /// QuickTime times as UTC, which is how the files are written and how the workbench reads them.
+    /// QuickTime times as UTC, which is how the files are written. `-a` with the four location tags
+    /// asked for without a group lists a place wherever in the file it is kept.
     public static let arguments: [String] = [
-        "-json", "-n", "-G1", "-api", "QuickTimeUTC=1",
+        "-json", "-n", "-G1", "-api", "QuickTimeUTC=1", "-a",
+        "-GPSLatitude", "-GPSLongitude", "-GPSCoordinates", "-GPSPosition",
         "-ExifIFD:DateTimeOriginal", "-ExifIFD:OffsetTimeOriginal", "-Composite:SubSecDateTimeOriginal",
         "-GPS:GPSLatitude", "-GPS:GPSLatitudeRef", "-GPS:GPSLongitude", "-GPS:GPSLongitudeRef",
         "-GPS:GPSAltitude", "-GPS:GPSAltitudeRef",
@@ -83,7 +90,8 @@ public enum ExifToolOutput {
             let south = string(entry["GPS:GPSLatitudeRef"])?.uppercased().hasPrefix("S") ?? false
             let west = string(entry["GPS:GPSLongitudeRef"])?.uppercased().hasPrefix("W") ?? false
             var altitude = number(entry["GPS:GPSAltitude"])
-            if let value = altitude, number(entry["GPS:GPSAltitudeRef"]) == 1 {
+            // 1 and 3 both mean below the reference level.
+            if let value = altitude, let reference = number(entry["GPS:GPSAltitudeRef"]), reference == 1 || reference == 3 {
                 altitude = -abs(value)
             }
             facts.location = GeoPoint(lat: south ? -abs(latitude) : latitude, lon: west ? -abs(longitude) : longitude,
@@ -99,9 +107,21 @@ public enum ExifToolOutput {
         facts.make = text(entry["IFD0:Make"]) ?? text(entry["Keys:Make"])
         facts.model = text(entry["IFD0:Model"]) ?? text(entry["Keys:Model"])
         facts.lens = text(entry["ExifIFD:LensModel"])
-        if let seconds = number(entry["QuickTime:Duration"]), seconds >= 0, seconds < 1_000_000_000 {
+        // A file written in pieces can report a length of 0 until it is finished off: that is "not known".
+        if let seconds = number(entry["QuickTime:Duration"]), seconds > 0, seconds < 1_000_000_000 {
             facts.durationMs = Int((seconds * 1000).rounded())
         }
+        // A place anywhere else in the file. The Composite tags only repeat what another tag says.
+        let placeTags: Set<String> = ["GPSLatitude", "GPSLongitude", "GPSCoordinates", "GPSPosition"]
+        for (key, _) in pairs {
+            let parts = key.split(separator: ":", maxSplits: 1).map(String.init)
+            guard parts.count == 2, placeTags.contains(parts[1]) else { continue }
+            if parts[0] == "Composite" || parts[0] == "GPS" { continue }
+            if key == "Keys:GPSCoordinates" && facts.location != nil { continue }
+            facts.strayLocationTags.append(key)
+        }
+        facts.strayLocationTags.sort()
+
         facts.contentIdentifier = pairs.first { $0.key.hasSuffix(":ContentIdentifier") }.flatMap { text($0.value) }
         facts.error = text(entry["ExifTool:Error"])
         return facts

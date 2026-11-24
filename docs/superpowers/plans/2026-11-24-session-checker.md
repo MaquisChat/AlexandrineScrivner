@@ -46,7 +46,7 @@ Inputs the spec implies that are most likely to bite, each pinned by a test in t
   - `struct ExifDate: Equatable, Sendable { let local: Instant; let offset: UTCOffset?; let hasFraction: Bool; var instant: Instant? }`. `local` is the clock reading as if it were UTC. `instant` is `local` minus `offset`, nil when there is no offset.
   - `ExifDate.init?(_ text: String)`: accepts `YYYY:MM:DD HH:MM:SS`, optionally `.` and 1 to 6 digits, optionally `Z` or `+HH:MM` / `-HH:MM`. Fractions are cut to milliseconds. Nil for anything else, including the all-zero date.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 func testPlainDate() {
@@ -77,16 +77,16 @@ func testInstantFromFields() {
 }
 ```
 
-- [ ] **Step 2: Run to see them fail**
+- [x] **Step 2: Run to see them fail**
 
 Run: `swift test --package-path Core --filter ExifDateTests`
 Expected: does not build, `cannot find 'ExifDate' in scope`.
 
-- [ ] **Step 3: Implement.** The new `Instant` initializer goes in `Instant.swift` beside `init?(iso:)` and shares its range checks; `init?(iso:)` should call it.
+- [x] **Step 3: Implement.** The new `Instant` initializer goes in `Instant.swift` beside `init?(iso:)` and shares its range checks; `init?(iso:)` should call it.
 
-- [ ] **Step 4: Run all tests.** `swift test --package-path Core`. Expected: 69 tests, 0 failures.
+- [x] **Step 4: Run all tests.** `swift test --package-path Core`. Expected: 69 tests, 0 failures.
 
-- [ ] **Step 5: Commit.** `feat(core): dates as ExifTool prints them`
+- [x] **Step 5: Commit.** `feat(core): dates as ExifTool prints them`
 
 ---
 
@@ -143,7 +143,7 @@ Reading rules:
 - `contentIdentifier` from any key ending in `:ContentIdentifier`. `error` from `ExifTool:Error`.
 - A value of the wrong type is treated as absent. Output that is not a JSON array of objects throws.
 
-- [ ] **Step 1: Write the failing tests.** The fixture is real ExifTool output for three generated files, pasted as a string constant.
+- [x] **Step 1: Write the failing tests.** The fixture is real ExifTool output for three generated files, pasted as a string constant.
 
 ```swift
 static let fixture = """
@@ -211,10 +211,10 @@ func testArgumentsAskForNumbersAndGroups() {
 }
 ```
 
-- [ ] **Step 2: Run to see them fail.** `swift test --package-path Core --filter MediaFactsTests`. Expected: `cannot find 'ExifToolOutput' in scope`.
-- [ ] **Step 3: Implement** in `MediaFacts.swift`.
-- [ ] **Step 4: Run all tests.** Expected: 76 tests, 0 failures.
-- [ ] **Step 5: Commit.** `feat(core): read what ExifTool says about a media file`
+- [x] **Step 2: Run to see them fail.** `swift test --package-path Core --filter MediaFactsTests`. Expected: `cannot find 'ExifToolOutput' in scope`.
+- [x] **Step 3: Implement** in `MediaFacts.swift`.
+- [x] **Step 4: Run all tests.** Expected: 76 tests, 0 failures.
+- [x] **Step 5: Commit.** `feat(core): read what ExifTool says about a media file`
 
 ---
 
@@ -291,7 +291,7 @@ Audio only:
 
 Durations and offsets in messages are `M:SS`. Ink files are not checked here; spec 6.3 asks nothing of them.
 
-- [ ] **Step 1: Write the failing tests.** A helper builds a small finished manifest with `SessionTimeline` (one span of 60 s at offset `+05:45`; a photo with a location at 10 s; a clip with no location from 20 s to 30 s) and a matching `[String: MediaFacts]`. Tests:
+- [x] **Step 1: Write the failing tests.** A helper builds a small finished manifest with `SessionTimeline` (one span of 60 s at offset `+05:45`; a photo with a location at 10 s; a clip with no location from 20 s to 30 s) and a matching `[String: MediaFacts]`. Tests:
 
 ```swift
 func testAgreeingFilesGiveNoFindings()              // []
@@ -315,10 +315,10 @@ func testNoMakeOrModel()                            // 1 warning
 
 Each asserts the exact count of problems and warnings and the subject path.
 
-- [ ] **Step 2: Run to see them fail.** Expected: `cannot find 'MediaCheck' in scope`.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run all tests.** Expected: 93 tests, 0 failures.
-- [ ] **Step 5: Commit.** `feat(core): check media files against the manifest`
+- [x] **Step 2: Run to see them fail.** Expected: `cannot find 'MediaCheck' in scope`.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run all tests.** Expected: 93 tests, 0 failures.
+- [x] **Step 5: Commit.** `feat(core): check media files against the manifest`
 
 ---
 
@@ -345,7 +345,7 @@ Rules, in this order:
 
 `listedFiles(in:)` and `isTidyRelativePath` are currently internal; both stay internal, since `SessionCheck` is in the same module.
 
-- [ ] **Step 1: Write the failing tests.** Each starts from `ExampleSession.write(in:)` in a temporary folder, except where noted.
+- [x] **Step 1: Write the failing tests.** Each starts from `ExampleSession.write(in:)` in a temporary folder, except where noted.
 
 ```swift
 func testTheExampleIsClean()                        // manifest non-nil, findings == []
@@ -362,10 +362,10 @@ func testUnfinishedSessionGetsOneFinding()          // SessionTimeline with star
 func testPathsOutsideTheFolderAreNeverOpened()      // edit session.json so a photo's file is "../outside.heic", and put a real file at that place → findings include the rule 4 problem for items[n].file and nothing with subject "../outside.heic"
 ```
 
-- [ ] **Step 2: Run to see them fail.** Expected: `cannot find 'SessionCheck' in scope`.
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run all tests.** Expected: 105 tests, 0 failures.
-- [ ] **Step 5: Commit.** `feat(core): check a session folder against its manifest`
+- [x] **Step 2: Run to see them fail.** Expected: `cannot find 'SessionCheck' in scope`.
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run all tests.** Expected: 105 tests, 0 failures.
+- [x] **Step 5: Commit.** `feat(core): check a session folder against its manifest`
 
 ---
 
@@ -419,7 +419,7 @@ The command: `scrivner-check [--media] [--exiftool PATH] FOLDER...`
 - Exit status: 0 when there are no problems, 1 when there are, 2 with `CheckArguments.usage` on standard error when the arguments make no sense.
 - `main.swift` holds only this wiring. It is exercised by Task 7's script, not by unit tests.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 func testCleanReport()            // render(folderName: "S", findings: [], mediaChecked: true) == "Session: S\n  Nothing wrong.\n"
@@ -428,15 +428,15 @@ func testVerdicts()               // "SESSION CHECK OK (1 session, 0 problems, 2
 func testArguments()              // ["a"] → folders ["a"], media false; ["--media","--exiftool","/x/exiftool","a","b"] → all three set; [] → nil; ["--bogus","a"] → nil; ["a","--exiftool"] → nil
 ```
 
-- [ ] **Step 2: Run to see them fail.**
-- [ ] **Step 3: Implement** `CheckReport.swift`, then `main.swift`, then add to `Package.swift`: `.executableTarget(name: "scrivner-check", dependencies: ["ScrivnerCore"], swiftSettings: [.swiftLanguageMode(.v6)])` (match how the existing targets set the language mode).
-- [ ] **Step 4: Run all tests, then the command by hand on the placeholder example.**
+- [x] **Step 2: Run to see them fail.**
+- [x] **Step 3: Implement** `CheckReport.swift`, then `main.swift`, then add to `Package.swift`: `.executableTarget(name: "scrivner-check", dependencies: ["ScrivnerCore"], swiftSettings: [.swiftLanguageMode(.v6)])` (match how the existing targets set the language mode).
+- [x] **Step 4: Run all tests, then the command by hand on the placeholder example.**
 
 Run: `swift test --package-path Core` — expected 109 tests, 0 failures.
 Run: `swift run --package-path Core scrivner-check format/examples/*` — expected `  Nothing wrong.` then the not-checked line, then `SESSION CHECK OK (1 session, 0 problems, 0 warnings)`, exit 0.
 Run: `swift run --package-path Core scrivner-check` — expected the usage text, exit 2.
 
-- [ ] **Step 5: Commit.** `feat: scrivner-check, the session folder checker`
+- [x] **Step 5: Commit.** `feat: scrivner-check, the session folder checker`
 
 ---
 
@@ -470,7 +470,7 @@ Tags are written with ExifTool (`-overwrite_original`), and ffmpeg is told not t
 
 Regenerating everything, in order: `UPDATE_EXAMPLE=1 swift test --package-path Core` (new times, placeholder media) → `python3 format/tools/make-example-media.py "format/examples/<folder>" "$(tools/get-exiftool.sh | tail -1)"` → `UPDATE_EXAMPLE=1 swift test --package-path Core` again (checksums of the real media) → `python3 format/tools/make-invalid.py .` → `(cd format && npm run validate)`.
 
-- [ ] **Step 1: Change the golden test first.** In `ExampleSessionTests`: write with `mediaFrom:` the committed folder when it exists; add assertions `manifest.utcOffset.string == "+05:45"`, `manifest.createdAt.iso == "2026-11-23T04:57:10.120Z"`, the folder name still has the prefix `2026-11-23 1042 Market visit [`; and a new test:
+- [x] **Step 1: Change the golden test first.** In `ExampleSessionTests`: write with `mediaFrom:` the committed folder when it exists; add assertions `manifest.utcOffset.string == "+05:45"`, `manifest.createdAt.iso == "2026-11-23T04:57:10.120Z"`, the folder name still has the prefix `2026-11-23 1042 Market visit [`; and a new test:
 
 ```swift
 func testCommittedExamplePassesTheFolderCheck() throws {
@@ -488,17 +488,17 @@ func testCommittedExamplePassesTheFolderCheck() throws {
 
 With `UPDATE_EXAMPLE=1` the test removes any other folder under `format/examples` before copying, so the old example does not linger.
 
-- [ ] **Step 2: Run to see it fail.** Expected: does not build (`mediaFrom`), then after Step 3's signature exists, fails on the offset assertion.
-- [ ] **Step 3: Implement** the `ExampleSession` change, `tools/get-exiftool.sh` and `make-example-media.py`.
-- [ ] **Step 4: Regenerate** in the order above. Remove the old example folder from git.
-- [ ] **Step 5: Verify.**
+- [x] **Step 2: Run to see it fail.** Expected: does not build (`mediaFrom`), then after Step 3's signature exists, fails on the offset assertion.
+- [x] **Step 3: Implement** the `ExampleSession` change, `tools/get-exiftool.sh` and `make-example-media.py`.
+- [x] **Step 4: Regenerate** in the order above. Remove the old example folder from git.
+- [x] **Step 5: Verify.**
 
 Run: `swift test --package-path Core` — expected 110 tests, 0 failures.
 Run: `(cd format && npm run validate)` — expected `SCHEMA CHECK OK (3 valid, 15 rejected)`.
 Run: `swift run --package-path Core scrivner-check --media --exiftool "$(tools/get-exiftool.sh | tail -1)" format/examples/*` — expected `  Nothing wrong.` and `SESSION CHECK OK (1 session, 0 problems, 0 warnings)`.
 Check: the example folder is under 2 MB in total.
 
-- [ ] **Step 6: Update `format/README.md`** (the example's media are now real, small and synthetic; how to regenerate; that the checker exists) and **commit.** `feat(format): a worked example with real media, on a clock that is not UTC`
+- [x] **Step 6: Update `format/README.md`** (the example's media are now real, small and synthetic; how to regenerate; that the checker exists) and **commit.** `feat(format): a worked example with real media, on a clock that is not UTC`
 
 ---
 
@@ -520,13 +520,13 @@ Check: the example folder is under 2 MB in total.
 3. Copies the example to a temporary folder, moves one photo's EXIF time forward by one minute with ExifTool, runs the checker on the copy. Must exit 1, and the output must contain both `says it was taken at` and `does not match its checksum`.
 4. Copies the example again, writes a location into the second clip (the one made with location off), runs the checker. Must exit 1 and contain `carries a location although session.json has none for it`.
 
-- [ ] **Step 1: Write `tools/check-example.sh`** and run it. Expected last line: `EXAMPLE CHECK OK`.
-- [ ] **Step 2: Prove it bites.** Temporarily change step 3's expected text to something that will not appear; run; expected `EXAMPLE CHECK FAILED`. Change it back; run; expected OK.
-- [ ] **Step 3: Add the job to `.github/workflows/core.yml`:** job `session-check`, `runs-on: ubuntu-24.04`, `container: swift:6.4.3-noble`, installs `perl`, `curl` and `ca-certificates` with apt, checks out, runs `tools/check-example.sh`.
-- [ ] **Step 4: Mac scripts.** `tools/mac-bootstrap.sh` gains a step that runs `tools/get-exiftool.sh`. `tools/mac-build.sh` gains a step `example check` running `tools/check-example.sh`, after `Core tests`. Write `tools/mac-check-session.sh`. `bash -n` on all four.
-- [ ] **Step 5: Docs.** One paragraph in `README.md`; in `docs/guides/mac-setup.md`, how to check a session folder brought over from the phone.
-- [ ] **Step 6: Run everything.** `swift test --package-path Core && (cd format && npm run validate) && tools/check-example.sh`. Expected: 110 tests, `SCHEMA CHECK OK (3 valid, 15 rejected)`, `EXAMPLE CHECK OK`.
-- [ ] **Step 7: Commit and push; confirm the three automatic checks pass on GitHub.** `ci: check the worked example with the session checker`
+- [x] **Step 1: Write `tools/check-example.sh`** and run it. Expected last line: `EXAMPLE CHECK OK`.
+- [x] **Step 2: Prove it bites.** Temporarily change step 3's expected text to something that will not appear; run; expected `EXAMPLE CHECK FAILED`. Change it back; run; expected OK.
+- [x] **Step 3: Add the job to `.github/workflows/core.yml`:** job `session-check`, `runs-on: ubuntu-24.04`, `container: swift:6.4.3-noble`, installs `perl`, `curl` and `ca-certificates` with apt, checks out, runs `tools/check-example.sh`.
+- [x] **Step 4: Mac scripts.** `tools/mac-bootstrap.sh` gains a step that runs `tools/get-exiftool.sh`. `tools/mac-build.sh` gains a step `example check` running `tools/check-example.sh`, after `Core tests`. Write `tools/mac-check-session.sh`. `bash -n` on all four.
+- [x] **Step 5: Docs.** One paragraph in `README.md`; in `docs/guides/mac-setup.md`, how to check a session folder brought over from the phone.
+- [x] **Step 6: Run everything.** `swift test --package-path Core && (cd format && npm run validate) && tools/check-example.sh`. Expected: 110 tests, `SCHEMA CHECK OK (3 valid, 15 rejected)`, `EXAMPLE CHECK OK`.
+- [x] **Step 7: Commit and push; confirm the three automatic checks pass on GitHub.** `ci: check the worked example with the session checker`
 
 ---
 
@@ -550,7 +550,26 @@ Check: the example folder is under 2 MB in total.
 
 This is not part of the automatic checks, because it needs the workbench's code. It is run by hand when either side changes, and the result is written down.
 
-- [ ] **Step 1: Write `scan.mts` and `workbench-check.sh`; run against the example.** Expected: every file `ok`, `WORKBENCH CHECK OK (6 files, workbench 0ad6506)`.
-- [ ] **Step 2: Prove it bites.** Run it against a copy of the example in which one clip's Apple creation date has been removed. Expected `FAIL` for that clip (the workbench then has no time zone for it) and `WORKBENCH CHECK FAILED`.
-- [ ] **Step 3: Write `docs/compatibility/workbench-check.md`:** the date, the workbench commit, the command, the full output, what it shows in plain language, and what it does not show (notes, placement beside the transcript and zip import are still the workbench project's work, spec section 9).
-- [ ] **Step 4: Update spec 6.4 and `README.md`; commit and push.** `docs: the workbench's reader run over the worked example`
+- [x] **Step 1: Write `scan.mts` and `workbench-check.sh`; run against the example.** Expected: every file `ok`, `WORKBENCH CHECK OK (6 files, workbench 0ad6506)`.
+- [x] **Step 2: Prove it bites.** Run it against a copy of the example in which one clip's Apple creation date has been removed. Expected `FAIL` for that clip (the workbench then has no time zone for it) and `WORKBENCH CHECK FAILED`.
+- [x] **Step 3: Write `docs/compatibility/workbench-check.md`:** the date, the workbench commit, the command, the full output, what it shows in plain language, and what it does not show (notes, placement beside the transcript and zip import are still the workbench project's work, spec section 9).
+- [x] **Step 4: Update spec 6.4 and `README.md`; commit and push.** `docs: the workbench's reader run over the worked example`
+
+---
+
+## Execution record (2026-11-24)
+
+All eight tasks are done on branch `checker`. A fresh reviewer then read the whole branch and found one must-fix and four should-fix items; all were fixed in one pass, each with a test that failed first. After the fixes: 127 tests pass; `SCHEMA CHECK OK (3 valid, 15 rejected)`; `EXAMPLE CHECK OK` with four cases; and the same checks pass on a Mac hosted by GitHub. The test counts quoted in the steps above are from before the review.
+
+Where what was built differs from the text above:
+
+- **The checker looks for a place anywhere in a file**, not only in the tags spec 6.3 names. `ExifToolOutput.arguments` also passes `-a -GPSLatitude -GPSLongitude -GPSCoordinates -GPSPosition`, and `MediaFacts.strayLocationTags` lists what turns up elsewhere. This closes a false pass the review found.
+- **An unfinished session is one problem**, and with `--media` its media are not looked inside.
+- **A folder of sessions** also reports a session folder that has lost its `session.json`.
+- **A time wrong by whole days** is printed with its date.
+- **`.DS_Store` and `._name` files are ignored**; any other unlisted file is a warning, and says so when the workbench would import it.
+- **A Live Photo identifier** is a warning on its own, and a problem only when a photo and a clip share one.
+- **A length of 0** read from a file counts as not known.
+- **Wording:** an ExifTool failure reads `media tags: could not be checked: …`; an altitude mismatch has its own sentence.
+- **The workbench check found a fault in the workbench**, recorded in `docs/compatibility/workbench-check.md`: it reads the time of an audio file wrong by the time-zone offset. The check therefore ends `WORKBENCH CHECK FAILED (2 failures, …)` until the workbench is corrected.
+- `tools/get-exiftool.sh` could not be run in the session that wrote it (a download-and-run was refused there). It runs in the automatic checks on Linux and on the hosted Mac.

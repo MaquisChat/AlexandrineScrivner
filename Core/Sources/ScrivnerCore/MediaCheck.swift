@@ -14,13 +14,37 @@ public enum MediaCheck {
     public static func findings(for manifest: Manifest, facts: [String: MediaFacts]) -> [CheckFinding] {
         var found: [CheckFinding] = []
 
-        for span in manifest.spans {
+        // The workbench joins a photo and a clip into one item when they share a Live Photo identifier.
+        var filesByIdentifier: [String: [String]] = [:]
+        for path in mediaPaths(in: manifest) {
+            if let identifier = facts[path]?.contentIdentifier {
+                filesByIdentifier[identifier, default: []].append(path)
+            }
+        }
+        func common(_ path: String, _ file: MediaFacts) {
+            if let identifier = file.contentIdentifier {
+                let others = (filesByIdentifier[identifier] ?? []).filter { $0 != path }
+                if others.isEmpty {
+                    found.append(CheckFinding(.warning, path, "carries a Live Photo identifier"))
+                } else {
+                    found.append(CheckFinding(.problem, path,
+                                              "shares a Live Photo identifier with \(others.joined(separator: ", ")), so the workbench would join them into one item"))
+                }
+            }
+            if file.make == nil && file.model == nil {
+                found.append(CheckFinding(.warning, path, "does not name the device that made it (make and model)"))
+            }
+        }
+
+        // A path that is not a tidy relative path is never opened, so there is nothing to compare;
+        // the folder check reports it.
+        for span in manifest.spans where Manifest.isTidyRelativePath(span.file) {
             guard let file = readable(span.file, facts, &found) else { continue }
-            common(span.file, file, &found)
+            common(span.file, file)
             created(span.file, file, at: span.startedAt, offset: span.utcOffset, &found)
             duration(span.file, file, expected: span.durationMs, &found)
-            if file.location != nil {
-                found.append(CheckFinding(.problem, span.file, "carries a location; audio is never located"))
+            if file.location != nil || !file.strayLocationTags.isEmpty {
+                found.append(CheckFinding(.problem, span.file, "carries a location; audio is never located" + whereFound(file)))
             }
             if let length = file.durationMs, let furthest = furthestOffset(on: span.id, in: manifest),
                furthest > length + durationToleranceMs {
@@ -32,16 +56,16 @@ public enum MediaCheck {
         for item in manifest.items {
             switch item {
             case .photo(let placement, let path, _, let gps):
-                guard let file = readable(path, facts, &found) else { continue }
-                common(path, file, &found)
+                guard Manifest.isTidyRelativePath(path), let file = readable(path, facts, &found) else { continue }
+                common(path, file)
                 photoTime(path, file, at: placement.at, offset: placement.utcOffset, &found)
                 location(path, file, expected: gps, &found)
                 if file.lens == nil {
                     found.append(CheckFinding(.warning, path, "does not name the lens"))
                 }
             case .video(let placement, let durationMs, _, _, let path, _, let gps):
-                guard let file = readable(path, facts, &found) else { continue }
-                common(path, file, &found)
+                guard Manifest.isTidyRelativePath(path), let file = readable(path, facts, &found) else { continue }
+                common(path, file)
                 created(path, file, at: placement.at, offset: placement.utcOffset, &found)
                 location(path, file, expected: gps, &found)
                 duration(path, file, expected: durationMs, &found)
@@ -83,16 +107,6 @@ public enum MediaCheck {
         return file
     }
 
-    private static func common(_ path: String, _ file: MediaFacts, _ found: inout [CheckFinding]) {
-        if file.contentIdentifier != nil {
-            found.append(CheckFinding(.problem, path,
-                                      "carries a Live Photo identifier, which would make the workbench pair it with another file"))
-        }
-        if file.make == nil && file.model == nil {
-            found.append(CheckFinding(.warning, path, "does not name the device that made it (make and model)"))
-        }
-    }
-
     private static func photoTime(_ path: String, _ file: MediaFacts, at: Instant, offset: UTCOffset, _ found: inout [CheckFinding]) {
         guard let original = file.original else {
             found.append(CheckFinding(.problem, path, "has no capture time inside it (EXIF DateTimeOriginal)"))
@@ -103,8 +117,8 @@ public enum MediaCheck {
             return
         }
         if apart(instant, at) > instantToleranceMs {
-            found.append(CheckFinding(.problem, path,
-                                      "says it was taken at \(clock(instant, offset)) but session.json says \(clock(at, offset))"))
+            let (inFile, inSession) = moments(instant, at, offset)
+            found.append(CheckFinding(.problem, path, "says it was taken at \(inFile) but session.json says \(inSession)"))
         }
         if stated != offset {
             found.append(CheckFinding(.problem, path,
@@ -119,8 +133,8 @@ public enum MediaCheck {
     private static func created(_ path: String, _ file: MediaFacts, at: Instant, offset: UTCOffset, _ found: inout [CheckFinding]) {
         if let instant = file.created?.instant {
             if apart(instant, at) > instantToleranceMs {
-                found.append(CheckFinding(.problem, path,
-                                          "says it was made at \(clock(instant, offset)) but session.json says \(clock(at, offset))"))
+                let (inFile, inSession) = moments(instant, at, offset)
+                found.append(CheckFinding(.problem, path, "says it was made at \(inFile) but session.json says \(inSession)"))
             }
         } else {
             found.append(CheckFinding(.problem, path, "has no creation time inside it (QuickTime CreateDate)"))
@@ -128,8 +142,9 @@ public enum MediaCheck {
 
         if let apple = file.creationDate, let stated = apple.offset, let instant = apple.instant {
             if apart(instant, at) > instantToleranceMs {
+                let (inFile, inSession) = moments(instant, at, offset)
                 found.append(CheckFinding(.problem, path,
-                                          "says it was made at \(clock(instant, offset)) (Apple creation date) but session.json says \(clock(at, offset))"))
+                                          "says it was made at \(inFile) (Apple creation date) but session.json says \(inSession)"))
             }
             if stated != offset {
                 found.append(CheckFinding(.problem, path,
@@ -140,14 +155,26 @@ public enum MediaCheck {
         }
     }
 
+    /// " (found in UserData:GPSCoordinates)" when the place is somewhere other than where spec 6.3 puts it.
+    private static func whereFound(_ file: MediaFacts) -> String {
+        file.strayLocationTags.isEmpty ? "" : " (found in \(file.strayLocationTags.joined(separator: ", ")))"
+    }
+
     private static func location(_ path: String, _ file: MediaFacts, expected: GeoPoint?, _ found: inout [CheckFinding]) {
+        // A place kept anywhere else in the file. The workbench would read it, so it counts.
+        if expected != nil, !file.strayLocationTags.isEmpty {
+            found.append(CheckFinding(.warning, path,
+                                      "also carries a location in \(file.strayLocationTags.joined(separator: ", ")), which the workbench may read instead"))
+        }
         switch (expected, file.location) {
         case (nil, nil):
-            break
+            if !file.strayLocationTags.isEmpty {
+                found.append(CheckFinding(.problem, path, "carries a location although session.json has none for it" + whereFound(file)))
+            }
         case (.some, nil):
             found.append(CheckFinding(.problem, path, "has no location inside it although session.json gives one"))
         case (nil, .some):
-            found.append(CheckFinding(.problem, path, "carries a location although session.json has none for it"))
+            found.append(CheckFinding(.problem, path, "carries a location although session.json has none for it" + whereFound(file)))
         case (let wanted?, let actual?):
             if abs(wanted.lat - actual.lat) > degreesTolerance || abs(wanted.lon - actual.lon) > degreesTolerance {
                 found.append(CheckFinding(.problem, path,
@@ -193,6 +220,21 @@ public enum MediaCheck {
     private static func clock(_ instant: Instant, _ offset: UTCOffset) -> String {
         let local = LocalClock(instant, offset: offset)
         return "\(two(local.hour)):\(two(local.minute)):\(two(local.second))"
+    }
+
+    /// The two moments as the local clock showed them. The date is added to both when they fall
+    /// on different days, or the same clock time on the wrong day would read as no difference at all.
+    private static func moments(_ inFile: Instant, _ inSession: Instant, _ offset: UTCOffset) -> (String, String) {
+        let a = LocalClock(inFile, offset: offset)
+        let b = LocalClock(inSession, offset: offset)
+        if (a.year, a.month, a.day) == (b.year, b.month, b.day) {
+            return (clock(inFile, offset), clock(inSession, offset))
+        }
+        func dated(_ local: LocalClock, _ instant: Instant) -> String {
+            let year = String(local.year)
+            return String(repeating: "0", count: max(0, 4 - year.count)) + year + "-\(two(local.month))-\(two(local.day)) " + clock(instant, offset)
+        }
+        return (dated(a, inFile), dated(b, inSession))
     }
 
     /// A length or position: `M:SS`.

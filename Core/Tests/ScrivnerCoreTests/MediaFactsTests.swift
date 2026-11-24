@@ -83,4 +83,36 @@ final class MediaFactsTests: XCTestCase {
             XCTAssertTrue(ExifToolOutput.arguments.contains(tag), tag)
         }
     }
+    func testAPlaceAnywhereInTheFileIsNoticed() throws {
+        // The workbench reads a place from whichever part of a file holds one, so the checker has to notice them all.
+        let facts = try ExifToolOutput.parse(#"""
+        [{"SourceFile":"clip.mov","UserData:GPSCoordinates":"27.7046 85.3076 1300","Composite:GPSLatitude":27.7046,"Composite:GPSLongitude":85.3076,"Composite:GPSPosition":"27.7046 85.3076"},
+         {"SourceFile":"photo.heic","XMP-exif:GPSLatitude":27.7046,"XMP-exif:GPSLongitude":85.3076},
+         {"SourceFile":"audio.m4a","ItemList:GPSCoordinates":"27.7046 85.3076"},
+         {"SourceFile":"usual.mov","Keys:GPSCoordinates":"27.7046 85.3076 1300","Composite:GPSLatitude":27.7046},
+         {"SourceFile":"garbled.mov","Keys:GPSCoordinates":"somewhere"},
+         {"SourceFile":"none.mov","QuickTime:Duration":3}]
+        """#)
+        XCTAssertEqual(facts["clip.mov"]?.strayLocationTags, ["UserData:GPSCoordinates"])
+        XCTAssertNil(facts["clip.mov"]?.location)
+        XCTAssertEqual(facts["photo.heic"]?.strayLocationTags, ["XMP-exif:GPSLatitude", "XMP-exif:GPSLongitude"])
+        XCTAssertEqual(facts["audio.m4a"]?.strayLocationTags, ["ItemList:GPSCoordinates"])
+        XCTAssertEqual(facts["usual.mov"]?.strayLocationTags, [])         // where spec 6.3 wants it; the Composite tags only repeat it
+        XCTAssertNotNil(facts["usual.mov"]?.location)
+        XCTAssertEqual(facts["garbled.mov"]?.strayLocationTags, ["Keys:GPSCoordinates"])   // there, but not readable: still a place
+        XCTAssertNil(facts["garbled.mov"]?.location)
+        XCTAssertEqual(facts["none.mov"]?.strayLocationTags, [])
+        for argument in ["-a", "-GPSLatitude", "-GPSLongitude", "-GPSCoordinates", "-GPSPosition"] {
+            XCTAssertTrue(ExifToolOutput.arguments.contains(argument), argument)
+        }
+    }
+    func testALengthOfZeroIsNotKnown() throws {
+        // A file written in pieces for crash safety can say its length is 0 until it is finished off.
+        let facts = try ExifToolOutput.parse(#"[{"SourceFile":"a.m4a","QuickTime:Duration":0},{"SourceFile":"b.m4a","QuickTime:Duration":0.0}]"#)
+        XCTAssertNil(facts["a.m4a"]?.durationMs); XCTAssertNil(facts["b.m4a"]?.durationMs)
+    }
+    func testBothWaysOfSayingBelowSeaLevel() throws {
+        let facts = try ExifToolOutput.parse(#"[{"SourceFile":"p.heic","GPS:GPSLatitude":1,"GPS:GPSLongitude":2,"GPS:GPSAltitudeRef":3,"GPS:GPSAltitude":40}]"#)
+        XCTAssertEqual(facts["p.heic"]?.location?.alt, -40)
+    }
 }

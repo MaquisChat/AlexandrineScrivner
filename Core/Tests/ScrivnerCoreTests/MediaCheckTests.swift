@@ -137,8 +137,40 @@ final class MediaCheckTests: XCTestCase {
         XCTAssertEqual(warnings(f).map(\.message), ["is 0:15 long but session.json says 1:00"])
     }
     func testLivePhotoIdentifier() throws {
-        let f = try check { $0[self.photoFile]?.contentIdentifier = "5B3B3A0E" }
-        XCTAssertEqual(only(f, .problem, photoFile), "carries a Live Photo identifier, which would make the workbench pair it with another file")
+        // On its own it does nothing in the workbench, which only joins a photo and a clip that share one.
+        let lone = try check { $0[self.photoFile]?.contentIdentifier = "5B3B3A0E" }
+        XCTAssertEqual(only(lone, .warning, photoFile), "carries a Live Photo identifier")
+        let shared = try check { $0[self.photoFile]?.contentIdentifier = "5B3B3A0E"; $0[self.clipFile]?.contentIdentifier = "5B3B3A0E" }
+        XCTAssertEqual(shared, [
+            CheckFinding(.problem, photoFile, "shares a Live Photo identifier with video/clip-0001.mov, so the workbench would join them into one item"),
+            CheckFinding(.problem, clipFile, "shares a Live Photo identifier with photos/photo-0001.heic, so the workbench would join them into one item"),
+        ])
+    }
+    func testAPlaceTuckedAwayElsewhereInAFile() throws {
+        let clip = try check { $0[self.clipFile]?.strayLocationTags = ["UserData:GPSCoordinates"] }
+        XCTAssertEqual(only(clip, .problem, clipFile), "carries a location although session.json has none for it (found in UserData:GPSCoordinates)")
+        let audio = try check { $0[self.audioFile]?.strayLocationTags = ["ItemList:GPSCoordinates"] }
+        XCTAssertEqual(only(audio, .problem, audioFile), "carries a location; audio is never located (found in ItemList:GPSCoordinates)")
+        // A photo that should have a place, has it in the right spot, and has another copy elsewhere.
+        let photo = try check { $0[self.photoFile]?.strayLocationTags = ["XMP-exif:GPSLatitude", "XMP-exif:GPSLongitude"] }
+        XCTAssertEqual(only(photo, .warning, photoFile), "also carries a location in XMP-exif:GPSLatitude, XMP-exif:GPSLongitude, which the workbench may read instead")
+        // A place that is there but in none of the right spots does not count as the place session.json gives.
+        let misplaced = try check { $0[self.photoFile]?.location = nil; $0[self.photoFile]?.strayLocationTags = ["XMP-exif:GPSLatitude"] }
+        XCTAssertEqual(problems(misplaced).map(\.message), ["has no location inside it although session.json gives one"])
+        XCTAssertEqual(warnings(misplaced).count, 1)
+    }
+    func testADateThatIsWrongByADay() throws {
+        // The same clock time on the wrong day: the report has to show the dates, or the two times look identical.
+        let photo = try check { $0[self.photoFile]?.original = ExifDate("2026:11:24 10:42:20.120+05:45") }
+        XCTAssertEqual(only(photo, .problem, photoFile), "says it was taken at 2026-11-24 10:42:20 but session.json says 2026-11-23 10:42:20")
+        let clip = try check { $0[self.clipFile]?.created = ExifDate("2026:11:22 04:57:30+00:00") }
+        XCTAssertEqual(only(clip, .problem, clipFile), "says it was made at 2026-11-22 10:42:30 but session.json says 2026-11-23 10:42:30")
+    }
+    func testFilesWhosePathsAreNotTidyAreLeftToTheFolderCheck() throws {
+        var m = try manifest()
+        var p = m.items[1].placement; p.id = "00000000-0000-7000-8000-00000000000a"
+        m.items.append(.photo(p, file: "../outside.heic", sha256: nil, gps: nil))
+        XCTAssertEqual(MediaCheck.findings(for: m, facts: agreeing()), [])
     }
     func testNoMakeOrModel() throws {
         let f = try check { $0[self.clipFile]?.make = nil; $0[self.clipFile]?.model = nil }
