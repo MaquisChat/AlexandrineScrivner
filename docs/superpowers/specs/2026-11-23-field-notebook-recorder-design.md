@@ -64,10 +64,10 @@ The reason for the stamps is what happens afterwards. The session is imported in
 
 - A Mac, and a **free** Apple developer account (owner decision: "not paid"). Consequences: no TestFlight; an installed app stops launching seven days after it was installed and must be re-installed from the Mac; data on the device survives a re-install.
 - **Devices (owner, 2026-11-24):** an iPhone 17 Pro, an iPad mini (6th generation), and a third-party stylus that is not an Apple Pencil. What follows from that:
-  - **Minimum OS.** The iPhone 17 Pro shipped with iOS 26, and the iPad mini 6 can run iPadOS 26 and 27. Proposed minimum: iOS and iPadOS 26, which means the iPad must be on 26 or later.
+  - **Minimum OS.** Both devices are on version 27 (owner). The iPhone 17 Pro shipped with iOS 26. Proposed minimum: iOS and iPadOS 26, built with the version 27 tools.
   - **Small iPad screen.** The iPad mini is 744 by 1133 points. The iPad layout is designed for that size first.
   - **The stylus may count as a finger.** Whether iPadOS treats this stylus as a pencil or as an ordinary touch is unknown until it is tried on the device. So ink must work with any touch (stylus or finger), and must not depend on pressure, tilt, hover, squeeze, double-tap, or handwriting-to-text. If the stylus is treated as a finger, the system offers no palm rejection, and writing with a resting hand will be unreliable; the remedy would be an Apple Pencil the mini 6 supports (2nd generation or USB-C). Stage 0 finds out which case applies.
-- **The Mac** is still unknown: Apple silicon or Intel, its macOS version, and whether Xcode is installed (section 11). This decides whether the approach works at all. The newest Xcode (27) runs only on Apple silicon Macs with macOS Tahoe 26.6 or later, and a device on iOS or iPadOS 27 needs it. It must be settled before stage 0.
+- **The Mac (owner, 2026-11-24):** Apple silicon, on macOS Tahoe. Because both devices are on version 27, the app is built with Xcode 27, which runs only on Apple silicon Macs with macOS Tahoe 26.6 or later. So this Mac can build and install the app, provided Tahoe is at 26.6 or later. Checking that, and installing Xcode 27, are the first setup steps of stage 0.
 
 **How the work gets done:**
 
@@ -321,7 +321,7 @@ The workbench project (section 9) can start once stage 1 produces real session f
 
 ## 8. Left to the builder
 
-- The app's exact minimum iOS and iPadOS version. 26 is proposed (section 3); the builder may raise it to 27 if both devices are on 27 and it simplifies the work.
+- The app's exact minimum iOS and iPadOS version. 26 is proposed (section 3); the builder may raise it to 27, since both devices are on 27, if that simplifies the work.
 - The audio pipeline, subject to the spike and the requirements in sections 5.5 and 7.
 - The keyboard shortcut for hide, avoiding system shortcuts.
 - How ink blocks begin and grow on the iPad page, and the drawing tool set, within the stylus constraint in section 3.
@@ -344,7 +344,8 @@ The workbench project (section 9) can start once stage 1 produces real session f
 |---|---|---|
 | What it is | A notebook with a recorder underneath; audio, video, photos and notes in one interface | Owner |
 | Devices | iPhone 17 Pro and iPad mini (6th generation); Apple keyboard, on-screen keyboard, a third-party stylus | Owner |
-| Minimum OS | iOS and iPadOS 26 | Proposed |
+| Mac | Apple silicon on macOS Tahoe; both devices on version 27, so Xcode 27 | Owner |
+| Minimum OS | iOS and iPadOS 26, built with Xcode 27 | Proposed |
 | Ink input | Any touch, stylus or finger; nothing that needs a genuine Apple Pencil | Proposed, from the owner's stylus |
 | Approach | Native Apple app | Owner |
 | Where it lives | Its own repository, `MaquisChat/AlexandrineScrivner` | Owner |
@@ -370,7 +371,7 @@ The workbench project (section 9) can start once stage 1 produces real session f
 
 Asked on 2026-11-23; answers go here and into the sections they affect.
 
-1. **The Mac.** Apple silicon or Intel, its macOS version, and whether Xcode is installed and which version. Also whether the iPhone and iPad are on version 26 or 27. Together these confirm the Mac can install onto the devices at all. (The device models were answered on 2026-11-24; see section 3.)
-2. **Connecting the Mac.** Whether the owner will connect the Mac to the agent's session so builds and tests can be run directly (section 3). If yes, the Mac's versions in question 1 can be read rather than asked.
+1. **Devices and the Mac.** Answered on 2026-11-24; see section 3.
+2. **Connecting the Mac.** Whether the owner will connect the Mac to the agent's session so builds and tests can be run directly (section 3). Not blocking: the plan works either way, through the log script if the Mac is not connected.
 
 Flagged earlier and cheap to change later, so not blocking: the reading of "notes of what time they are recording" (5.3), and excluding session media from backups (5.8).
