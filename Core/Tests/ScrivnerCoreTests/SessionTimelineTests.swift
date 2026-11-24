@@ -176,6 +176,41 @@ final class SessionTimelineTests: XCTestCase {
         t.setStartLocation(nil); t.setResearcher(nil)
         XCTAssertNil(t.manifest.startLocation); XCTAssertNil(t.manifest.researcher)
     }
+    func testSetTextDoesNotCountAsALaterEdit() throws {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        let note = try t.addText("P", at: moment(65))
+        try t.setText(id: note, text: "P-014 has run the stall since 2009.")
+        guard case .text(let p, let text, let modified) = t.manifest.items[1] else { return XCTFail() }
+        XCTAssertEqual(text, "P-014 has run the stall since 2009."); XCTAssertNil(modified)
+        XCTAssertEqual(p.offsetMs, 65_000)
+        try t.editText(id: note, text: "P-014 has run the stall since 2008.", at: moment(300))
+        guard case .text(let later, _, let changed) = t.manifest.items[1] else { return XCTFail() }
+        XCTAssertEqual(changed, t0.adding(milliseconds: 300_000)); XCTAssertEqual(later.offsetMs, 65_000)
+        XCTAssertThrowsError(try t.setText(id: "nope", text: "x")) { XCTAssertEqual($0 as? TimelineError, .noSuchItem("nope")) }
+    }
+    func testRemoveItem() throws {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        let note = try t.addText("a", at: moment(1))
+        let photo = try t.addPhoto(file: "photos/photo-0001.heic", gps: nil, at: moment(2))
+        try t.removeItem(id: note)
+        try t.removeItem(id: photo)
+        XCTAssertEqual(t.manifest.items.map(\.kind), ["marker"])
+        let marker = t.manifest.items[0].placement.id
+        XCTAssertThrowsError(try t.removeItem(id: marker)) { XCTAssertEqual($0 as? TimelineError, .cannotRemoveMarker) }
+        XCTAssertThrowsError(try t.removeItem(id: "nope")) { XCTAssertEqual($0 as? TimelineError, .noSuchItem("nope")) }
+        var cut = SessionTimeline(resuming: t.manifest, ids: SeededIdSource(seed: 2))
+        XCTAssertThrowsError(try cut.removeItem(id: marker)) { XCTAssertEqual($0 as? TimelineError, .needsRecovery) }
+    }
+    func testOpenSpanId() throws {
+        var t = newTimeline()
+        XCTAssertNil(t.openSpanId)
+        let span = try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        XCTAssertEqual(t.openSpanId, span)
+        try t.endRecording(by: .pause, at: moment(5))
+        XCTAssertNil(t.openSpanId)
+    }
     func testIdsAreValidAndUnique() throws {
         var t = newTimeline()
         try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))

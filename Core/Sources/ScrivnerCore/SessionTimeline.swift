@@ -24,6 +24,7 @@ public enum TimelineError: Error, Equatable {
     case noSuchItem(String)
     case clipAlreadyEnded(String)
     case nothingToRecover
+    case cannotRemoveMarker
 }
 
 /// Keeps a session's manifest as things happen: opens and closes recording spans, and gives every
@@ -42,6 +43,9 @@ public struct SessionTimeline: Sendable {
     private var hasRecorded: Bool
 
     public var isRecording: Bool { openSpanHostStart != nil }
+
+    /// The span being recorded, if any.
+    public var openSpanId: String? { isRecording ? manifest.spans.last?.id : nil }
 
     public init(title: String, participants: [String], researcher: String?, device: DeviceInfo,
                 startLocation: GeoPoint?, at moment: Moment, ids: any IdSource) {
@@ -160,6 +164,33 @@ public struct SessionTimeline: Sendable {
         let placement = place(at: moment)
         manifest.items.append(.text(placement, text: text, modifiedAt: nil))
         return placement.id
+    }
+
+    /// Changes the words of a note that is still being written. Unlike `editText`, this does not
+    /// count as a later edit: `modifiedAt` is left as it is.
+    public mutating func setText(id: String, text: String) throws {
+        guard !needsRecovery else { throw TimelineError.needsRecovery }
+        for index in manifest.items.indices {
+            if case .text(let p, _, let modifiedAt) = manifest.items[index], p.id == id {
+                manifest.items[index] = .text(p, text: text, modifiedAt: modifiedAt)
+                return
+            }
+        }
+        throw TimelineError.noSuchItem(id)
+    }
+
+    /// Takes a note, photo, clip or handwriting block off the page. Markers are the record of what
+    /// the recorder did and cannot be removed. The item's files, if any, are the caller's to deal with.
+    public mutating func removeItem(id: String) throws {
+        guard !needsRecovery else { throw TimelineError.needsRecovery }
+        guard let index = manifest.items.firstIndex(where: { $0.placement.id == id }) else {
+            throw TimelineError.noSuchItem(id)
+        }
+        if case .marker = manifest.items[index] {
+            throw TimelineError.cannotRemoveMarker
+        }
+        manifest.items.remove(at: index)
+        openClipHostStarts[id] = nil
     }
 
     /// Changes a note's words. The note keeps its original time and place on the audio.
