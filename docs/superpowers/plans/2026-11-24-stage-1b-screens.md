@@ -181,6 +181,10 @@ A fresh reviewer then read the whole branch and returned "with fixes": one must-
 - Zips made for sharing are removed afterwards and at launch.
 - The walkthrough's weak checks were rewritten: the hidden screen is compared pixel by pixel; markers are matched as markers; a photo is taken with location off; the title is changed; the layout is checked to be remembered between launches; stopping is done from the plain layout. Checks that read back what was just typed wait for it, because the hosted Mac is at times several times slower.
 
+After the fixes, on the hosted Mac (run 45493319325, commit ea54199): the build script passes, 215 Core tests pass, all four walks pass, and `scrivner-check` accepts the session folder the third walk leaves behind (`SESSION CHECK OK`, 1 session, 0 problems, 0 warnings). The check of what is inside the media files reports the stand-in recordings, as expected: no creation date or device name, and a time taken when the file was written, not when the recording began. The two photos pass it, with a place in the first and none in the second.
+
+The fix pass took seven rounds on the hosted Mac. Two of the faults it met were in the app and were not in the review: the note field was lost on a long page, and the cursor opened at the start of a note being changed. The rest were the walkthrough's own: a button listed twice, a menu the simulator could not press, and checks that read the page before a slow machine had caught up.
+
 Every decision made without asking, and what was left for later, is in `docs/judgment-calls-2026-11-24.md` under "The iPhone app's screens".
 
 ## What this adds to stage 1c's list
