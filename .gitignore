@@ -1,0 +1,11 @@
+.DS_Store
+.build/
+.tools/
+build/
+spike/Spike.xcodeproj/
+spike/Generated/
+spike/Local.xcconfig
+docs/spike/results/**/*.caf
+docs/spike/results/**/*.mov
+docs/spike/results/**/*.heic
+docs/spike/results/**/*.jsonl
