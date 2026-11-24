@@ -1,5 +1,5 @@
 #!/bin/bash
-# Checks that this Mac can build the app, fetches XcodeGen, and prepares spike/Local.xcconfig.
+# Checks that this Mac can build the app, fetches XcodeGen and ExifTool, and prepares spike/Local.xcconfig.
 #
 #   tools/mac-bootstrap.sh                  check everything; last line is "BOOTSTRAP OK"
 #   tools/mac-bootstrap.sh --capture-team   also save the signing team chosen in Xcode
@@ -88,7 +88,12 @@ if [ ! -x "$xcodegen" ]; then
   [ -x "$xcodegen" ] || fail "XcodeGen was downloaded but its program was not found at $xcodegen."
 fi
 
-# 4. Local settings for this Mac (never committed)
+# 4. ExifTool, for the session checker
+exiftool_report="$(tools/get-exiftool.sh 2>&1)" \
+  || fail "ExifTool could not be fetched. $(printf '%s' "$exiftool_report" | tail -1)"
+exiftool_version="$(printf '%s\n' "$exiftool_report" | sed -n 's/^ExifTool //p' | tail -1)"
+
+# 5. Local settings for this Mac (never committed)
 local_config="spike/Local.xcconfig"
 if [ ! -f "$local_config" ]; then
   mkdir -p spike
@@ -100,7 +105,7 @@ if [ ! -f "$local_config" ]; then
   } > "$local_config"
 fi
 
-# 5. Save the signing team chosen in Xcode
+# 6. Save the signing team chosen in Xcode
 if [ "$capture_team" = yes ]; then
   project="spike/Spike.xcodeproj/project.pbxproj"
   [ -f "$project" ] || fail "The Xcode project has not been generated yet. Run tools/mac-build.sh first."
@@ -117,8 +122,9 @@ if [ "$capture_team" = yes ]; then
   echo "Signing team saved to $local_config."
 fi
 
-# 6. Report
+# 7. Report
 echo "macOS $macos_version"
 echo "Xcode $xcode_version"
 echo "XcodeGen $("$xcodegen" --version 2>/dev/null | awk '{ print $NF; exit }')"
+echo "ExifTool $exiftool_version"
 echo "BOOTSTRAP OK"

@@ -2,9 +2,10 @@
 # Checks that everything compiles, without signing:
 #   1. the Mac is set up            (tools/mac-bootstrap.sh)
 #   2. the Core tests pass          (swift test)
-#   3. the SpikeKit tests pass      (swift test)
-#   4. the Xcode project generates  (XcodeGen)
-#   5. the app compiles for a device
+#   3. the session checker passes the worked example and catches faults in copies of it
+#   4. the SpikeKit tests pass      (swift test)
+#   5. the Xcode project generates  (XcodeGen)
+#   6. the app compiles for a device
 #
 # Everything is shown on screen and saved to build/logs/build-<time>.log, with anything that
 # identifies a person or a device replaced by a placeholder.
@@ -37,6 +38,7 @@ generate_project() {
 
 run_step "setup check" tools/mac-bootstrap.sh
 run_step "Core tests" swift test --package-path Core
+run_step "example check" tools/check-example.sh
 run_step "SpikeKit tests" swift test --package-path spike/SpikeKit
 run_step "project generation" generate_project
 run_step "compile" xcodebuild \

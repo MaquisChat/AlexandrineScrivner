@@ -53,6 +53,18 @@ jobs:
           path: build/logs/
           if-no-files-found: ignore
 
+  session-check:
+    # The session checker passes the worked example, media tags included, and catches faults
+    # put into copies of it.
+    runs-on: ubuntu-24.04
+    container: swift:6.4.3-noble
+    steps:
+      - name: Install Perl and curl
+        run: apt-get update && apt-get install -y --no-install-recommends perl curl ca-certificates
+      - uses: actions/checkout@v5
+      - name: Check the worked example
+        run: tools/check-example.sh
+
   schema-check:
     runs-on: ubuntu-24.04
     steps:

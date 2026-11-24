@@ -79,3 +79,15 @@ Claude will ask you to do this when the project is first ready, before anything 
 4. In the **Team** menu, choose the one that ends in **(Personal Team)**.
 5. Close Xcode.
 6. Tell Claude it is done. It then runs `tools/mac-bootstrap.sh --capture-team`, which remembers your choice on this Mac only.
+
+## 9. Checking a session folder from the phone
+
+Once the app is recording sessions, each one is a folder. After copying a session folder (or a folder of them) from the phone to the Mac, check it before importing it into the research workbench:
+
+```bash
+tools/mac-check-session.sh ~/Desktop/Sessions
+```
+
+The checker reads each session and prints, in plain sentences, anything that is wrong: a file that is missing or has changed since the session was finished, or a photo, clip or recording whose time, time zone or place inside the file does not match the session's own record. The last line is `SESSION CHECK OK` or `SESSION CHECK FAILED`. Warnings do not fail the check; problems do.
+
+The first run fetches ExifTool, the program that reads the tags inside media files, into the project's `.tools` folder. It is the same build the workbench uses.

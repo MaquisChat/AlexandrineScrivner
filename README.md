@@ -11,4 +11,10 @@ Two parts need no Mac and are checked automatically on every push:
 - `Core/` is the part of the recorder that has nothing to do with the screen or the microphone: times, ids, file names, the session's timeline, and reading and writing the session folder. Check it with `swift test --package-path Core`.
 - `format/` defines the session folder that the recorder writes and the research workbench reads, with a worked example. See `format/README.md`.
 
+A session folder brought over from the phone can be checked before it goes into the workbench. The checker reads the folder and says in plain sentences anything that is wrong with it, including a photo, clip or recording whose time or place inside the file disagrees with the session's own record:
+
+```bash
+tools/mac-check-session.sh ~/Desktop/Sessions
+```
+
 Building the app needs a Mac. The one-time setup is described in plain language in `docs/guides/mac-setup.md`.
