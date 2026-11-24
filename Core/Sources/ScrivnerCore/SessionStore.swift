@@ -228,8 +228,12 @@ public enum SessionStore {
 
     /// Every folder under `root` that holds a `session.json`, newest name first.
     public static func sessions(in root: URL) -> [SessionFolder] {
-        let contents = (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? []
-        return contents
+        // Built from `root` exactly as it was given, so a folder found here equals the same folder
+        // made by `create`. (Asking the system for URLs gives a different spelling of the same
+        // place on a Mac, where /var is another name for /private/var.)
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: root.path)) ?? []
+        return names
+            .map { root.appendingPathComponent($0, isDirectory: true) }
             .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent("session.json").path) }
             .sorted { $0.lastPathComponent > $1.lastPathComponent }
             .map { SessionFolder(url: $0) }
