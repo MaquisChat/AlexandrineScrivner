@@ -24,7 +24,7 @@
 
 Inputs the spec implies that are most likely to bite, each pinned by a test in the task named:
 
-1. **A folder that has been through Finder or AirDrop** gains `.DS_Store` and `._name` files. These are warnings, never problems, and the verdict stays OK. `testStrayFilesAreWarnings` (Task 4).
+1. **A folder that has been through Finder or AirDrop** gains `.DS_Store` and `._name` files. These are ignored (the Mac itself hides the second kind from programs, as the first run on a Mac showed); any other unlisted file is a warning, never a problem, and the verdict stays OK. `testWhatTheMacLeavesBehindIsIgnored`, `testStrayFilesAreWarnings` (Task 4).
 2. **A Mac whose own time zone is not UTC.** ExifTool then prints QuickTime times in the Mac's zone, with its offset. Instants must still compare correctly. `testQuickTimeDatesInAnotherSystemZone` (Task 2).
 3. **Location switched off, but a file carries a place anyway.** That is a privacy failure and must be a problem. `testLocationInsideAFileThatShouldHaveNone` (Task 3).
 4. **A `session.json` that names a file outside the folder** (`../../x`). The checker reports it and never opens the file. `testPathsOutsideTheFolderAreNeverOpened` (Task 4).
@@ -339,7 +339,7 @@ Rules, in this order:
 3. A span is open, or a listed file has no checksum → problem, subject `session.json`, `the session was not finished: it was still recording, was cut off, or its files have no checksums yet. Open it in the app so it can be finished.` The session then counts as unfinished. (A problem, not a warning: only a finished session should be imported, so the verdict must not be OK.)
 4. Every `manifest.problems(finished:)` (finished unless rule 3 fired) → problem, subject `session.json`, `<path> <message>`.
 5. Every listed file whose path is tidy: not there → problem `is listed in session.json but is not in the folder`; there but empty → problem `is empty`; a checksum is listed and differs → problem `does not match its checksum in session.json: the file has changed or is damaged`. A path that is not tidy is never opened (rule 4 has already reported it).
-6. Every file found under the folder that is not listed, other than `session.json` and `notes.md` → warning, subject its path, `is in the folder but not listed in session.json`. Hidden files (name starting with a dot) included.
+6. Every file found under the folder that is not listed, other than `session.json` and `notes.md` → warning, subject its path, `is in the folder but not listed in session.json`. Hidden files (name starting with a dot) included, except `.DS_Store` and `._name` files, which macOS leaves behind and which are ignored.
 7. `notes.md` missing → warning `is missing`; present but different from `NotesMarkdown.render(manifest)` → warning `is out of date with session.json`.
 8. The folder's name differs from `SessionStore.folderName(for:)` → warning, subject `folder`, `is named "<actual>"; its start time and title give "<expected>"`.
 

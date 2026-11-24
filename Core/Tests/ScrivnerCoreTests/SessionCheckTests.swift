@@ -67,13 +67,21 @@ final class SessionCheckTests: XCTestCase {
     }
     func testStrayFilesAreWarnings() throws {
         let folder = try example()
-        try write("x", to: folder, ".DS_Store")
-        try write("x", to: folder, "photos/._photo-0001.heic")
         try write("x", to: folder, "extra.txt")
+        try write("x", to: folder, "photos/.hidden-notes")
         let message = "is in the folder but not listed in session.json"
-        XCTAssertEqual(findings(folder), [CheckFinding(.warning, ".DS_Store", message),
-                                          CheckFinding(.warning, "extra.txt", message),
-                                          CheckFinding(.warning, "photos/._photo-0001.heic", message)])
+        XCTAssertEqual(findings(folder), [CheckFinding(.warning, "extra.txt", message),
+                                          CheckFinding(.warning, "photos/.hidden-notes", message)])
+    }
+    func testWhatTheMacLeavesBehindIsIgnored() throws {
+        // Finder and AirDrop leave .DS_Store files, and "._name" files beside files copied to some
+        // disks. They are not part of the session, and the Mac itself hides the second kind.
+        let folder = try example()
+        try write("x", to: folder, ".DS_Store")
+        try write("x", to: folder, "photos/.DS_Store")
+        try write("x", to: folder, "photos/._photo-0001.heic")
+        try write("x", to: folder, "._session.json")
+        XCTAssertEqual(findings(folder), [])
     }
     func testNotesMissingOrStale() throws {
         let folder = try example()

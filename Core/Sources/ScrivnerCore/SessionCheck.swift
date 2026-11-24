@@ -72,8 +72,9 @@ public enum SessionCheck {
             }
         }
 
-        // 6. Nothing else is in the folder.
+        // 6. Nothing else is in the folder. What macOS leaves behind is not counted.
         for path in filesOnDisk(under: folder.url) where !listedPaths.contains(path) && path != "session.json" && path != "notes.md" {
+            if isMacLitter(path) { continue }
             found.append(CheckFinding(.warning, path, "is in the folder but not listed in session.json"))
         }
 
@@ -112,6 +113,15 @@ public enum SessionCheck {
             }
         }
         return files
+    }
+
+    /// `.DS_Store`, which Finder leaves in folders it has shown, and `._name`, which macOS writes
+    /// beside a file on disks that cannot hold its extra attributes. Neither is part of a session;
+    /// macOS hides the second kind from programs, so it is ignored everywhere for the same answer on
+    /// every system.
+    static func isMacLitter(_ path: String) -> Bool {
+        let name = path.split(separator: "/").last.map(String.init) ?? path
+        return name == ".DS_Store" || name.hasPrefix("._")
     }
 
     /// Every file under `root`, hidden ones included, as sorted paths relative to it with forward slashes.
