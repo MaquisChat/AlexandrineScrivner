@@ -86,7 +86,8 @@ final class WalkthroughTests: XCTestCase {
         if word.exists {
             return word.label.lowercased()
         }
-        let pill = (app.buttons["pause-resume"].value as? String) ?? ""
+        let pause = button("pause-resume")
+        let pill = pause.exists ? ((pause.value as? String) ?? "") : ""
         return (pill.components(separatedBy: ",").first ?? "").lowercased()
     }
 
@@ -114,10 +115,37 @@ final class WalkthroughTests: XCTestCase {
 
     /// A fresh simulator covers its keyboard with a tip about sliding to type, the first time.
     private func dismissKeyboardTip() {
-        let button = app.buttons["Continue"]
+        let button = app.buttons["Continue"].firstMatch
         if button.exists {
             button.tap()
+            // Keys typed while the keyboard is still settling can be lost.
+            Thread.sleep(forTimeInterval: 3)
         }
+    }
+
+    /// A button, by its identifier or its words. Always the first match: the system sometimes
+    /// lists one button twice (an alert's, for one), and asking to tap "the" button then fails.
+    private func button(_ name: String) -> XCUIElement {
+        app.buttons[name].firstMatch
+    }
+
+    /// Taps something once it is there. If it never appears, that is a failure, and the walk
+    /// carries on, so that one missing control does not hide everything after it.
+    @discardableResult
+    private func press(_ element: XCUIElement, _ what: String, within seconds: TimeInterval = 30) -> Bool {
+        guard element.waitForExistence(timeout: seconds) else {
+            XCTFail("\(what) was not there to be tapped")
+            describeScreen("missing-" + what.replacingOccurrences(of: " ", with: "-"))
+            return false
+        }
+        element.tap()
+        return true
+    }
+
+    /// What is in the note field just now, or nothing if the field is not there.
+    private var typedSoFar: String {
+        let field = element("note-field")
+        return field.exists ? ((field.value as? String) ?? "") : ""
     }
 
     /// The words of an element, or nothing if it is not there. (Asking a missing element for its
@@ -137,11 +165,11 @@ final class WalkthroughTests: XCTestCase {
 
     private func launch() {
         app.launch()
-        XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 120), "the list did not appear")
+        XCTAssertTrue(button("new-session").waitForExistence(timeout: 120), "the list did not appear")
     }
 
     private func startSession() {
-        app.buttons["new-session"].tap()
+        button("new-session").tap()
         XCTAssertTrue(element("recorder-state").waitForExistence(timeout: 120), "the session did not open")
     }
 
@@ -151,15 +179,19 @@ final class WalkthroughTests: XCTestCase {
         field.tap()
         dismissKeyboardTip()
         field.typeText(line + "\n")
-        XCTAssertTrue(note(line).waitForExistence(timeout: 30), "\"\(line)\" did not reach the page")
+        if !note(line).waitForExistence(timeout: 30) {
+            XCTFail("\"\(line)\" did not reach the page")
+            describeScreen("did-not-reach-the-page")
+            shot("did-not-reach-the-page")
+        }
     }
 
     private func stopSession() {
-        app.buttons["stop"].tap()
-        let confirm = app.buttons["confirm-stop"].firstMatch
+        button("stop").tap()
+        let confirm = button("confirm-stop")
         XCTAssertTrue(confirm.waitForExistence(timeout: 30))
         confirm.tap()
-        XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 60), "stopping did not return to the list")
+        XCTAssertTrue(button("new-session").waitForExistence(timeout: 60), "stopping did not return to the list")
     }
 
     // MARK: - The walks
@@ -171,7 +203,7 @@ final class WalkthroughTests: XCTestCase {
         XCTAssertTrue(element("trial-banner").exists, "the list says this version records nothing real")
         shot("empty-list")
 
-        app.buttons["settings"].tap()
+        press(button("settings"), "settings")
         let toggle = app.switches["location-default"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 30))
         XCTAssertEqual(toggle.value as? String, "1", "location should be on when the app is first installed")
@@ -182,7 +214,7 @@ final class WalkthroughTests: XCTestCase {
         }
         XCTAssertEqual(toggle.value as? String, "0")
         shot("settings")
-        app.buttons["settings-done"].tap()
+        press(button("settings-done"), "settings-done")
 
         startSession()
         XCTAssertEqual(recorderState, "recording")
@@ -195,18 +227,18 @@ final class WalkthroughTests: XCTestCase {
         write("A short session.")
         stopSession()
 
-        let row = app.buttons["session-row"].firstMatch
+        let row = button("session-row")
         XCTAssertTrue(row.waitForExistence(timeout: 30))
         XCTAssertFalse(anything(saying: "Not finished").exists)
         XCTAssertTrue(anything(saying: "Not shared yet").exists)
         shot("list-with-a-session")
         row.swipeLeft()
-        XCTAssertTrue(app.buttons["delete"].waitForExistence(timeout: 15))
-        app.buttons["delete"].tap()
-        let confirm = app.buttons["confirm-delete"].firstMatch
+        XCTAssertTrue(button("delete").waitForExistence(timeout: 15))
+        press(button("delete"), "delete")
+        let confirm = button("confirm-delete")
         XCTAssertTrue(confirm.waitForExistence(timeout: 15), "nothing is deleted without being asked")
         XCTAssertTrue(row.exists)
-        confirm.tap()
+        press(confirm, "the confirmation")
         XCTAssertTrue(app.staticTexts["No sessions yet"].waitForExistence(timeout: 30))
     }
 
@@ -223,21 +255,21 @@ final class WalkthroughTests: XCTestCase {
         let notice = element("launch-notice")
         XCTAssertTrue(notice.waitForExistence(timeout: 60), "the list says what was put right")
         XCTAssertTrue(words(notice).contains("was still recording when the app was last closed"))
-        XCTAssertTrue(app.buttons["session-row"].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(button("session-row").waitForExistence(timeout: 60))
         XCTAssertFalse(anything(saying: "Not finished").exists, "the session is complete without being opened")
         XCTAssertTrue(anything(saying: "Not shared yet").exists)
         shot("list-after-being-closed")
-        app.buttons["dismiss-launch-notice"].tap()
+        press(button("dismiss-launch-notice"), "dismiss-launch-notice")
         XCTAssertFalse(element("launch-notice").exists)
 
-        app.buttons["session-row"].firstMatch.tap()
+        press(button("session-row"), "session-row")
         XCTAssertTrue(marker("Interrupted (the app was closed unexpectedly)").waitForExistence(timeout: 60))
         XCTAssertTrue(note("Typed before closing").exists)
         XCTAssertEqual(recorderState, "paused")
         shot("recovered-session")
 
         // It can be carried on with, and stopped properly this time.
-        app.buttons["pause-resume"].tap()
+        press(button("pause-resume"), "pause-resume")
         XCTAssertTrue(marker("Resumed").waitForExistence(timeout: 60))
         XCTAssertEqual(recorderState, "recording")
         write("Typed after coming back.")
@@ -270,68 +302,68 @@ final class WalkthroughTests: XCTestCase {
 
         // An older note is changed: it opens with the cursor at its end, keeps its place, and is
         // marked as edited.
-        note("Prices by hand").tap()
+        press(note("Prices by hand"), "Prices by hand")
         let editor = element("note-editor")
         XCTAssertTrue(editor.waitForExistence(timeout: 30))
         if !takesKeyboard("note-editor") {
             XCTFail("a note opened for changing is ready to be typed into")
-            editor.tap()
+            press(editor, "note-editor")
         }
         app.typeText(" Always.")
         shot("editing-a-note")
-        app.buttons["save-note"].tap()
+        press(button("save-note"), "save-note")
         let changed = note("Prices by hand. Always.")
         XCTAssertTrue(changed.waitForExistence(timeout: 30), "the change did not reach the page, at the end of the note")
         XCTAssertTrue(words(changed).contains("edited"), "a changed note says it was edited")
 
         // And one is deleted, after being asked.
-        note("Yes.").tap()
-        XCTAssertTrue(app.buttons["delete-note"].waitForExistence(timeout: 30))
-        app.buttons["delete-note"].tap()
-        let confirmDelete = app.buttons["confirm-delete-note"].firstMatch
+        press(note("Yes."), "Yes.")
+        XCTAssertTrue(button("delete-note").waitForExistence(timeout: 30))
+        press(button("delete-note"), "delete-note")
+        let confirmDelete = button("confirm-delete-note")
         XCTAssertTrue(confirmDelete.waitForExistence(timeout: 30), "no note is deleted without being asked")
-        confirmDelete.tap()
+        press(confirmDelete, "confirm-delete-note")
         XCTAssertTrue(element("recorder-state").waitForExistence(timeout: 30))
         XCTAssertEqual(all("note", startingWith: "Yes.").count, 1)
 
         // Title and participants.
-        element("session-title").tap()
+        press(element("session-title"), "session-title")
         let title = app.textFields["title-field"]
         XCTAssertTrue(title.waitForExistence(timeout: 30))
-        title.tap()
+        press(title, "title-field")
         title.typeText("Market stall holders, second visit")
         let who = app.textFields["participants-field"]
-        who.tap()
+        press(who, "participants-field")
         who.typeText("P-014")
-        app.buttons["details-save"].tap()
+        press(button("details-save"), "details-save")
         XCTAssertTrue(element("recorder-state").waitForExistence(timeout: 30))
         XCTAssertTrue(words(element("session-title")).contains("Market stall"))
         XCTAssertTrue(words(element("session-title")).contains("P-014"))
 
         // A photo with location on; then location off, which asks first, and a photo without.
-        app.buttons["photo"].tap()
+        press(button("photo"), "photo")
         XCTAssertTrue(element("photo-row").waitForExistence(timeout: 30))
-        element("location-state").tap()
-        let turnOff = app.alerts.buttons["Turn off"]
+        press(element("location-state"), "location-state")
+        let turnOff = app.alerts.buttons["Turn off"].firstMatch
         XCTAssertTrue(turnOff.waitForExistence(timeout: 30), "location is not switched without being asked")
         XCTAssertEqual(words(element("location-state")), "Location on")
-        turnOff.tap()
+        press(turnOff, "Turn off")
         XCTAssertTrue(marker("Location off").waitForExistence(timeout: 30))
         XCTAssertEqual(words(element("location-state")), "Location off")
-        app.buttons["photo"].tap()
+        press(button("photo"), "photo")
 
-        app.buttons["pause-resume"].tap()
+        press(button("pause-resume"), "pause-resume")
         XCTAssertTrue(marker("Paused").waitForExistence(timeout: 60))
         XCTAssertEqual(recorderState, "paused")
         write("Off the record.")
-        app.buttons["pause-resume"].tap()
+        press(button("pause-resume"), "pause-resume")
         XCTAssertTrue(marker("Resumed").waitForExistence(timeout: 60))
         XCTAssertEqual(recorderState, "recording")
         XCTAssertFalse(element("notice").exists, "nothing went wrong along the way")
         shot("margin-layout")
 
         // The same page, drawn the other way, with the keyboard carried over.
-        app.buttons["layout-switch"].tap()
+        press(button("layout-switch"), "layout-switch")
         XCTAssertTrue(words(element("layout-switch")).hasPrefix("Layout: plain page"))
         XCTAssertTrue(note("Off the record").waitForExistence(timeout: 30))
         XCTAssertEqual(recorderState, "recording")
@@ -341,53 +373,56 @@ final class WalkthroughTests: XCTestCase {
 
         // Hide while half way through a note.
         app.typeText("Half a thought")
-        XCTAssertTrue(app.buttons["hide"].isHittable, "Hide can be reached while writing")
+        XCTAssertTrue(button("hide").isHittable, "Hide can be reached while writing")
         shot("plain-layout-writing")
-        app.buttons["hide"].tap()
+        press(button("hide"), "hide")
         let cover = element("cover")
-        XCTAssertTrue(cover.waitForExistence(timeout: 15))
-        XCTAssertFalse(note("Off the record").exists, "nothing of the page can be read out")
-        XCTAssertTrue(screenIsEntirelyBlack(), "nothing of the page can be seen")
-        shot("hidden")
-        cover.tap()                                                              // a single tap does nothing
-        XCTAssertTrue(cover.exists)
-        cover.doubleTap()
-        XCTAssertTrue(app.buttons["hide"].waitForExistence(timeout: 15))
+        if cover.waitForExistence(timeout: 15) {
+            XCTAssertFalse(note("Off the record").exists, "nothing of the page can be read out")
+            XCTAssertTrue(screenIsEntirelyBlack(), "nothing of the page can be seen")
+            shot("hidden")
+            cover.tap()                                                          // a single tap does nothing
+            XCTAssertTrue(cover.exists)
+            cover.doubleTap()
+        } else {
+            XCTFail("Hide did not cover the page")
+        }
+        XCTAssertTrue(button("hide").waitForExistence(timeout: 15))
         XCTAssertFalse(element("cover").exists)
-        XCTAssertEqual(element("note-field").value as? String, "Half a thought", "the half-typed note is still there")
+        XCTAssertEqual(typedSoFar, "Half a thought", "the half-typed note is still there")
         expectKeyboard("coming back from the cover carries on where the writing was")
         app.typeText(", finished.")
-        XCTAssertEqual(element("note-field").value as? String, "Half a thought, finished.")
+        XCTAssertEqual(typedSoFar, "Half a thought, finished.")
 
         // The same from an attached keyboard: Command-Shift-B hides, and brings the page back.
         app.typeKey("b", modifierFlags: [.command, .shift])
         if cover.waitForExistence(timeout: 15) {
             XCTAssertTrue(screenIsEntirelyBlack())
             app.typeKey("b", modifierFlags: [.command, .shift])
-            XCTAssertTrue(app.buttons["hide"].waitForExistence(timeout: 15))
+            XCTAssertTrue(button("hide").waitForExistence(timeout: 15))
             XCTAssertFalse(element("cover").exists, "the shortcut brings the page back")
         } else {
             XCTFail("Command-Shift-B did not hide the page")
         }
 
         // Paused, seen on the plain layout.
-        app.buttons["pause-resume"].tap()
+        press(button("pause-resume"), "pause-resume")
         XCTAssertTrue(marker("Paused").waitForExistence(timeout: 60))
         XCTAssertEqual(recorderState, "paused")
         shot("plain-layout-paused")
-        app.buttons["pause-resume"].tap()
+        press(button("pause-resume"), "pause-resume")
         XCTAssertEqual(recorderState, "recording")
 
         // Stopped from the plain layout, where Stop is in the menu. The layout stays as chosen.
-        app.buttons["session-menu"].tap()
-        let stop = app.buttons["Stop session"]
+        press(button("session-menu"), "session-menu")
+        let stop = button("Stop session")
         XCTAssertTrue(stop.waitForExistence(timeout: 30))
-        stop.tap()
-        let confirmStop = app.buttons["confirm-stop"].firstMatch
+        press(stop, "Stop session")
+        let confirmStop = button("confirm-stop")
         XCTAssertTrue(confirmStop.waitForExistence(timeout: 30))
-        confirmStop.tap()
-        XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 60), "stopping did not return to the list")
-        XCTAssertTrue(app.buttons["session-row"].firstMatch.waitForExistence(timeout: 30))
+        press(confirmStop, "confirm-stop")
+        XCTAssertTrue(button("new-session").waitForExistence(timeout: 60), "stopping did not return to the list")
+        XCTAssertTrue(button("session-row").waitForExistence(timeout: 30))
         XCTAssertTrue(anything(saying: "Market stall").exists)
         XCTAssertTrue(anything(saying: "Not shared yet").exists)
         shot("list-after-a-whole-session")
@@ -400,11 +435,11 @@ final class WalkthroughTests: XCTestCase {
         app.launchArguments = ["-uiTesting", "-uiTestingDark",
                                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         launch()
-        let row = app.buttons["session-row"].firstMatch
+        let row = button("session-row")
         XCTAssertTrue(row.waitForExistence(timeout: 60))
         shot("largest-text-list")
-        row.tap()
-        XCTAssertTrue(app.buttons["pause-resume"].waitForExistence(timeout: 60))
+        press(row, "the session in the list")
+        XCTAssertTrue(button("pause-resume").waitForExistence(timeout: 60))
         XCTAssertTrue(words(element("layout-switch")).hasPrefix("Layout: plain page"), "the layout is remembered between launches")
         XCTAssertEqual(recorderState, "stopped")
         for control in ["photo", "hide", "pause-resume", "layout-switch", "close", "session-menu", "location-state"] {
@@ -412,7 +447,7 @@ final class WalkthroughTests: XCTestCase {
         }
         shot("largest-text-plain")
 
-        app.buttons["layout-switch"].tap()
+        press(button("layout-switch"), "layout-switch")
         XCTAssertTrue(words(element("layout-switch")).hasPrefix("Layout: times in the margin"))
         XCTAssertEqual(recorderState, "stopped")
         for control in ["photo", "hide", "pause-resume", "layout-switch", "close", "location-state", "session-title"] {
@@ -420,7 +455,7 @@ final class WalkthroughTests: XCTestCase {
         }
         shot("largest-text-margin")
 
-        app.buttons["close"].tap()
-        XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 60))
+        press(button("close"), "close")
+        XCTAssertTrue(button("new-session").waitForExistence(timeout: 60))
     }
 }
