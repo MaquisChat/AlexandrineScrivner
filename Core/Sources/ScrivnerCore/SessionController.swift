@@ -53,6 +53,10 @@ public final class SessionController {
             && !SessionCheck.listedFiles(in: manifest).contains { $0.sha256 == nil }
     }
 
+    /// The id of the note being written, if one is open. Its row is on the page like any other;
+    /// a screen that shows the note in its own field leaves that row out.
+    public var openNoteId: String? { writer.openNoteId }
+
     /// The words of the note being written, if one is open.
     public var openNoteText: String? {
         guard let open = writer.openNoteId else { return nil }

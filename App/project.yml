@@ -1,0 +1,61 @@
+name: Scrivner
+options:
+  deploymentTarget:
+    iOS: "26.0"
+configFiles:
+  Debug: Local.xcconfig
+  Release: Local.xcconfig
+packages:
+  ScrivnerCore:
+    path: ../Core
+targets:
+  Scrivner:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    dependencies:
+      - package: ScrivnerCore
+        product: ScrivnerCore
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: Scrivner
+        UIBackgroundModes: [audio]
+        NSMicrophoneUsageDescription: Records the session's audio.
+        NSCameraUsageDescription: Takes photos for the session.
+        NSLocationWhenInUseUsageDescription: Records where photos were taken, when location is switched on.
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).scrivner
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+  ScrivnerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Scrivner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_ID_PREFIX).scrivner.uitests
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        TEST_TARGET_NAME: Scrivner
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+schemes:
+  Scrivner:
+    build:
+      targets:
+        Scrivner: all
+        ScrivnerUITests: [test]
+    test:
+      targets:
+        - ScrivnerUITests

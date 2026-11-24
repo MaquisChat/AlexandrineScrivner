@@ -5,7 +5,8 @@
 #   3. the session checker passes the worked example and catches faults in copies of it
 #   4. the SpikeKit tests pass      (swift test)
 #   5. the Xcode project generates  (XcodeGen)
-#   6. the app compiles for a device
+#   6. the test app compiles for a device
+#   7. the app's project generates, and the app compiles for a device
 #
 # Everything is shown on screen and saved to build/logs/build-<time>.log, with anything that
 # identifies a person or a device replaced by a placeholder.
@@ -36,6 +37,10 @@ generate_project() {
   (cd spike && ../.tools/xcodegen/bin/xcodegen generate)
 }
 
+generate_app_project() {
+  (cd App && ../.tools/xcodegen/bin/xcodegen generate)
+}
+
 run_step "setup check" tools/mac-bootstrap.sh
 run_step "Core tests" swift test --package-path Core
 run_step "example check" tools/check-example.sh
@@ -46,6 +51,15 @@ run_step "compile" xcodebuild \
   -scheme Spike \
   -destination 'generic/platform=iOS' \
   -derivedDataPath build/DerivedData \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+
+run_step "app project generation" generate_app_project
+run_step "app compile" xcodebuild \
+  -project App/Scrivner.xcodeproj \
+  -scheme Scrivner \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath build/DerivedData-app \
   CODE_SIGNING_ALLOWED=NO \
   build
 

@@ -160,8 +160,9 @@ final class SessionControllerTests: XCTestCase {
         XCTAssertNil(c.openNoteText)
         clock.advance(1); c.typing("half a tho")
         XCTAssertEqual(c.openNoteText, "half a tho")
+        XCTAssertEqual(c.openNoteId, c.page(style: .twentyFourHour).rows.last?.id)
         c.finishNote()
-        XCTAssertNil(c.openNoteText)
+        XCTAssertNil(c.openNoteText); XCTAssertNil(c.openNoteId)
     }
     func testNoPlaceAfterLocationIsSwitchedOff() throws {
         let c = try start()

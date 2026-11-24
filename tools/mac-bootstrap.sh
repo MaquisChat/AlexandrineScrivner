@@ -105,6 +105,11 @@ if [ ! -f "$local_config" ]; then
   } > "$local_config"
 fi
 
+# The app shares the same local settings as the test app.
+if [ -d App ] && [ ! -f App/Local.xcconfig ]; then
+  cp "$local_config" App/Local.xcconfig
+fi
+
 # 6. Save the signing team chosen in Xcode
 if [ "$capture_team" = yes ]; then
   project="spike/Spike.xcodeproj/project.pbxproj"
@@ -119,6 +124,9 @@ if [ "$capture_team" = yes ]; then
     END { if (!done) print "DEVELOPMENT_TEAM = " team }
   ' "$local_config" > "$tmp"
   mv "$tmp" "$local_config"
+  if [ -d App ]; then
+    cp "$local_config" App/Local.xcconfig
+  fi
   echo "Signing team saved to $local_config."
 fi
 

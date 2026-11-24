@@ -7,6 +7,9 @@ build/
 spike/Spike.xcodeproj/
 spike/Generated/
 spike/Local.xcconfig
+App/Scrivner.xcodeproj/
+App/Generated/
+App/Local.xcconfig
 docs/spike/results/**/*.caf
 docs/spike/results/**/*.mov
 docs/spike/results/**/*.heic

@@ -1,0 +1,3 @@
+// Copy to Local.xcconfig. tools/mac-bootstrap.sh does this for you.
+DEVELOPMENT_TEAM =
+BUNDLE_ID_PREFIX = local.scrivner.example
