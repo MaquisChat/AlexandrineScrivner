@@ -24,14 +24,13 @@ public enum NotesMarkdown {
             case .text(_, let text, _):
                 paragraphs.append("\(time) \(text)")
             case .marker(_, let type, let detail):
-                paragraphs.append("\(time) *\(markerText(type, detail))*")
+                paragraphs.append("\(time) *\(Wording.marker(type, detail: detail))*")
             case .photo(_, let file, _, _):
                 paragraphs.append("\(time) [photo: \(file)]")
             case .video(_, let durationMs, _, let sound, let file, _, _):
                 var note = "[video: \(file)"
                 if let durationMs {
-                    let seconds = durationMs / 1000
-                    note += ", \(seconds / 60):\(two(seconds % 60))"
+                    note += ", " + Wording.length(milliseconds: durationMs)
                 }
                 if !sound { note += ", no sound" }
                 paragraphs.append("\(time) \(note)]")
@@ -41,18 +40,6 @@ public enum NotesMarkdown {
         }
 
         return paragraphs.joined(separator: "\n\n") + "\n"
-    }
-
-    private static func markerText(_ type: MarkerType, _ detail: String?) -> String {
-        switch type {
-        case .recordingStarted: return "Recording started"
-        case .paused: return "Paused"
-        case .resumed: return "Resumed"
-        case .stopped: return "Stopped"
-        case .interrupted: return detail.map { "Interrupted (\($0))" } ?? "Interrupted"
-        case .locationOff: return "Location off"
-        case .locationOn: return "Location on"
-        }
     }
 
     private static func two(_ value: Int) -> String {
