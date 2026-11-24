@@ -133,11 +133,11 @@ This section is written without code names where it can be, because these are th
 
 **The two layouts**
 
-- **In the plain layout the controls now sit on a line of their own, above the title.** In the mockup the title and the recorder pill shared a line. With the layout switch and the menu added there was no room for a title, and at large text sizes controls were pushed off the screen. *If wrong:* this is the most visible change from the mockup; say so and it can be laid out differently.
+- **In the plain layout the controls now sit on a line of their own, above the title.** In the mockup the title and the recorder pill shared a line. With the layout switch and a Stop button added there was no room for a title, and at large text sizes controls were pushed off the screen. *If wrong:* this is the most visible change from the mockup; say so and it can be laid out differently.
 - **In the plain layout the title is the top of the page and scrolls away with it.** Only the controls and the location line stay put. With the keyboard up, a title that stayed put left room for about three lines of notes. *If wrong:* the title can be pinned again; tapping it to change it works either way.
 - **The plain layout's pill says "Paused" or "Stopped" in words when it is not recording**, and shows whether location is on under the title. Before, the only sign of a pause was a dot changing from red to grey.
 - **The plain layout's three round buttons take their own space at the bottom** instead of floating over the page, so the line being written is never under them.
-- **A finished session shows a Close button in both layouts.**
+- **Stop is a button in both layouts, and a finished session shows Close in its place.** The plain layout first kept Stop in a "more" menu. The menu is gone: Stop is now always in view, and the two other things it held are one tap away (tap the title to change it and the participant codes; tap the location line to switch location).
 
 **Hiding**
 

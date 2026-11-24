@@ -177,31 +177,6 @@ struct LayoutSwitch: View {
     }
 }
 
-/// The less-used things in the plain layout: the title and participants, location, and stopping.
-struct SessionMenu: View {
-    @ObservedObject var session: SessionModel
-    let actions: SessionActions
-
-    var body: some View {
-        Menu {
-            Button("Title and participants", systemImage: "pencil", action: actions.details)
-            Button(session.isLocationOn ? "Turn location off" : "Turn location on",
-                   systemImage: session.isLocationOn ? "location.slash" : "location", action: actions.toggleLocation)
-            if session.isRecording || !session.isFinished {
-                Button("Stop session", systemImage: "stop.circle", role: .destructive, action: actions.stop)
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(Theme.ui(18, .semibold))
-                .frame(width: 44, height: 44)
-                .foregroundStyle(Theme.ink)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.rule))
-        }
-        .accessibilityIdentifier("session-menu")
-        .accessibilityLabel("Session options")
-    }
-}
-
 /// The session's title and its participant codes.
 struct SessionDetails: View {
     @ObservedObject var session: SessionModel

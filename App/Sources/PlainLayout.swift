@@ -23,13 +23,22 @@ struct PlainLayout: View {
 
     /// The controls sit on a line of their own, so that neither a long title nor large text can
     /// push one of them off the screen. They and the location line stay put; the title is the
-    /// top of the page and scrolls away with it, leaving room to write.
+    /// top of the page and scrolls away with it, leaving room to write. Everything is one tap:
+    /// the title to change it and the participants, the location line to switch location.
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 LayoutSwitch(isMargin: false, action: actions.switchLayout)
-                SessionMenu(session: session, actions: actions)
-                if session.isFinished && !session.isRecording {
+                // Stop while there is something to stop; Close once the session is finished.
+                if session.isRecording || !session.isFinished {
+                    Button("Stop", action: actions.stop)
+                        .font(Theme.ui(15, .semibold))
+                        .foregroundStyle(Theme.recording)
+                        .fixedSize()
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("stop")
+                        .accessibilityLabel("Stop session")
+                } else {
                     Button("Close", action: actions.close)
                         .font(Theme.ui(15, .semibold))
                         .fixedSize()

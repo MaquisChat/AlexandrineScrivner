@@ -172,14 +172,14 @@ A fresh reviewer then read the whole branch and returned "with fixes": one must-
 - A session cut off when the app was closed is repaired when the app opens and made complete as it stands (`AppModel.repairSessionsThatWereCutOff`; in Core, `SessionController.open` finishes a recovered session). The list says what was done.
 - Opening a session only to read it never changes it: the "Location off" line owed by a setting that was turned off is written when something is next added (Core, three new tests).
 - Location is confirmed in both directions, and shown in both layouts.
-- The plain layout: controls on their own line above the title; the title scrolls with the page; the pill says what it is doing in words when not recording; the round buttons take their own room at the bottom; a Close button for a finished session.
+- The plain layout: controls on their own line above the title; the title scrolls with the page; the pill says what it is doing in words when not recording; the round buttons take their own room at the bottom; Stop is a button (the "more" menu it first sat in is gone, since the simulator could not press its items and everything else in it was already one tap away), with Close in its place for a finished session.
 - The note field sits outside the lazily built rows. The walkthrough, not the review, found that on a page longer than the screen a new row could push the field out of view, where it was rebuilt and lost the keyboard.
 - Sessions are left out of backups. The walkthrough's reset switch and its dark-appearance switch are compiled for the simulator only.
 - Every notice is shown until dismissed. Stop stays on the session if it could not be finished. Pending changes are saved when the app leaves the front.
 - Dark appearance; text size up to the largest setting (notes grow all the way, controls and titles to one and a half times).
 - The keyboard shortcut is Command-Shift-B. VoiceOver's double tap dismisses the cover. `docs/adr/0004-the-cover.md` records the cover.
 - Zips made for sharing are removed afterwards and at launch.
-- The walkthrough's weak checks were rewritten: the hidden screen is compared pixel by pixel; markers are matched as markers; a photo is taken with location off; the title is changed; the layout is checked to be remembered between launches; stopping is done from the plain layout's menu.
+- The walkthrough's weak checks were rewritten: the hidden screen is compared pixel by pixel; markers are matched as markers; a photo is taken with location off; the title is changed; the layout is checked to be remembered between launches; stopping is done from the plain layout. Checks that read back what was just typed wait for it, because the hosted Mac is at times several times slower.
 
 Every decision made without asking, and what was left for later, is in `docs/judgment-calls-2026-11-24.md` under "The iPhone app's screens".
 
