@@ -13,7 +13,7 @@ struct SpikeApp: App {
             TabView {
                 AudioTestView()
                     .tabItem { Label("Audio test", systemImage: "waveform") }
-                Text("The stylus probe arrives in a later step.")
+                StylusProbeView()
                     .tabItem { Label("Stylus", systemImage: "pencil.tip") }
                 ReportsView()
                     .tabItem { Label("Reports", systemImage: "doc.text") }
