@@ -133,4 +133,17 @@ if [ -n "${exiftool:-}" ] && [ -x "$exiftool" ]; then
   "$check" --media --exiftool "$exiftool" build/walkthrough-sessions 2>&1 | scrub | tee -a "$LOG" || true
 fi
 
+# With SCRIVNER_PRINT_SCREENSHOTS=1, what the app wrote is printed too: the record of each session
+# and its notes, as the workbench and a person would read them.
+if [ "${SCRIVNER_PRINT_SCREENSHOTS:-0}" = "1" ]; then
+  find build/walkthrough-sessions -type f | sort | sed 's/^/  /'
+  for record in build/walkthrough-sessions/*/session.json build/walkthrough-sessions/*/notes.md; do
+    [ -f "$record" ] || continue
+    echo "-----BEGIN SCREEN DESCRIPTION $(basename "$(dirname "$record")" | tr ' /' '__')__$(basename "$record").txt-----"
+    head -c 40000 "$record"
+    echo
+    echo "-----END SCREEN DESCRIPTION-----"
+  done
+fi
+
 echo "WALKTHROUGH OK (${count:-0} screenshots)"
