@@ -87,7 +87,7 @@ spike/                            (deleted in Task 9)
 **Interfaces:**
 - Produces: `tools/mac-bootstrap.sh` (exit 0 and last line `BOOTSTRAP OK` on success); `.tools/xcodegen/bin/xcodegen`; `spike/Local.xcconfig` defining `DEVELOPMENT_TEAM` and `BUNDLE_ID_PREFIX`.
 
-- [ ] **Step 1: Write `.gitignore`**
+- [x] **Step 1: Write `.gitignore`**
 
 ```
 .DS_Store
@@ -103,11 +103,11 @@ docs/spike/results/**/*.heic
 docs/spike/results/**/*.jsonl
 ```
 
-- [ ] **Step 2: Write `README.md`**
+- [x] **Step 2: Write `README.md`**
 
 Four short paragraphs: what the app is (one sentence from the spec's Purpose); that the design is in `docs/superpowers/specs/`; that plans are in `docs/superpowers/plans/`; that building needs a Mac and starts with `docs/guides/mac-setup.md`.
 
-- [ ] **Step 3: Write `spike/Local.xcconfig.example`**
+- [x] **Step 3: Write `spike/Local.xcconfig.example`**
 
 ```
 // Copy to Local.xcconfig. tools/mac-bootstrap.sh does this for you.
@@ -115,7 +115,7 @@ DEVELOPMENT_TEAM =
 BUNDLE_ID_PREFIX = local.scrivner.example
 ```
 
-- [ ] **Step 4: Write `tools/mac-bootstrap.sh`**
+- [x] **Step 4: Write `tools/mac-bootstrap.sh`**
 
 Behaviour, in order, stopping with a one-line plain-language message and exit 1 at the first failure:
 1. `sw_vers -productVersion` is 26.6 or later.
@@ -125,7 +125,7 @@ Behaviour, in order, stopping with a one-line plain-language message and exit 1 
 5. With `--capture-team`: read the `DEVELOPMENT_TEAM` value from `spike/Spike.xcodeproj/project.pbxproj` and write it into `spike/Local.xcconfig`; fail if none is found.
 6. Print the macOS, Xcode and XcodeGen versions, then `BOOTSTRAP OK`.
 
-- [ ] **Step 5: Write `docs/guides/mac-setup.md`**
+- [x] **Step 5: Write `docs/guides/mac-setup.md`**
 
 Plain language, numbered, one action per step, for a reader who does not code:
 1. Update macOS to Tahoe 26.6 or later (System Settings, General, Software Update).
@@ -137,7 +137,7 @@ Plain language, numbered, one action per step, for a reader who does not code:
 7. The seven-day limit and what re-installing means.
 8. Choosing the signing team once (the wording of Task 4 Step 7).
 
-- [ ] **Step 6: Write `docs/adr/0000-template.md`**
+- [x] **Step 6: Write `docs/adr/0000-template.md`**
 
 Headings only: `# NNNN. Title`, `- **Status:**`, `- **Date:**`, `## Context`, `## Decision`, `## Consequences`.
 
@@ -148,7 +148,7 @@ Headings only: `# NNNN. Title`, `- **Status:**`, `- **Date:**`, `## Context`, `#
 Run: `tools/mac-bootstrap.sh`
 Expected: last line `BOOTSTRAP OK`; `spike/Local.xcconfig` exists; `git status` does not list it.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add README.md .gitignore tools/mac-bootstrap.sh spike/Local.xcconfig.example docs/guides/mac-setup.md docs/adr/0000-template.md
@@ -203,7 +203,7 @@ public enum AudioPosition {
 }
 ```
 
-- [ ] **Step 1: Write `Package.swift`**
+- [x] **Step 1: Write `Package.swift`**
 
 ```swift
 // swift-tools-version: 6.0
@@ -221,7 +221,7 @@ let package = Package(
 )
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `GapAnalyzerTests.swift`:
 
@@ -297,12 +297,12 @@ final class EventLogTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 3: [Mac] Run the tests to see them fail**
+- [x] **Step 3: [Mac] Run the tests to see them fail**
 
 Run: `swift test --package-path spike/SpikeKit`
 Expected: build failure naming `GapAnalyzer`, `AudioPosition` and `EventLog` as undefined.
 
-- [ ] **Step 4: Implement `EventLog.swift` and `GapAnalyzer.swift`**
+- [x] **Step 4: Implement `EventLog.swift` and `GapAnalyzer.swift`**
 
 `EventLog` guards its array with an `NSLock`.
 
@@ -316,12 +316,12 @@ Every gap has `atHostSeconds = aEnd` and `afterBufferIndex` = the index of `a`.
 
 `AudioPosition.seconds`: find the buffer whose span `[hostSeconds, hostSeconds + frames / sampleRate)` contains `host`; return the frames of all earlier buffers divided by `sampleRate`, plus `host - buffer.hostSeconds`.
 
-- [ ] **Step 5: [Mac] Run the tests to see them pass**
+- [x] **Step 5: [Mac] Run the tests to see them pass**
 
 Run: `swift test --package-path spike/SpikeKit`
 Expected: `Executed 9 tests, with 0 failures`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add spike/SpikeKit
@@ -360,7 +360,7 @@ public enum JSONLines {
 }
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `ReportWriterTests.swift`:
 
@@ -452,12 +452,12 @@ final class JSONLinesTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: [Mac] Run the tests to see them fail**
+- [x] **Step 2: [Mac] Run the tests to see them fail**
 
 Run: `swift test --package-path spike/SpikeKit`
 Expected: build failure naming `ReportWriter` and `JSONLines` as undefined.
 
-- [ ] **Step 3: Implement `ReportWriter.swift` and `JSONLines.swift`**
+- [x] **Step 3: Implement `ReportWriter.swift` and `JSONLines.swift`**
 
 Report rules, which the exact-text test pins:
 - `wall seconds` and `recorded seconds` use one decimal place; every offset and gap length uses three.
@@ -468,12 +468,12 @@ Report rules, which the exact-text test pins:
 
 `JSONLines.encodeLine` uses `JSONEncoder` with sorted keys and dates as seconds since 1970. `decode` splits on newlines, ignores empty lines, and counts lines that fail to decode.
 
-- [ ] **Step 4: [Mac] Run the tests to see them pass**
+- [x] **Step 4: [Mac] Run the tests to see them pass**
 
 Run: `swift test --package-path spike/SpikeKit`
 Expected: `Executed 16 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add spike/SpikeKit
@@ -518,7 +518,7 @@ enum HostClock {
 
 Scripts: `tools/mac-build.sh` checks that everything compiles, without signing, and ends with `RESULT: OK` or `RESULT: FAILED at <step>, log: <path>`. `tools/mac-install.sh iphone|ipad` builds signed for that device, installs and launches, and ends with `RESULT: INSTALLED on <hardware model>` or `RESULT: FAILED at <step>, log: <path>`.
 
-- [ ] **Step 1: Write `spike/project.yml`**
+- [x] **Step 1: Write `spike/project.yml`**
 
 ```yaml
 name: Spike
@@ -555,17 +555,17 @@ targets:
         CODE_SIGN_STYLE: Automatic
 ```
 
-- [ ] **Step 2: Implement `RunStore.swift`**
+- [x] **Step 2: Implement `RunStore.swift`**
 
 `HostClock` lives in this file. `writeReport` reads `buffers.jsonl` and `events.jsonl` with `JSONLines.decode`, takes the sample rate from `audio.caf` (48 000 if the file cannot be opened), uses the first buffer's `hostSeconds` as the start (the first event's when there are no buffers), sets the status from whether `finishedMarker` exists, and adds one extra line at the end of the report: `log lines skipped: <n>`. `deviceLine` reads the hardware model with `sysctlbyname("hw.machine")`.
 
-- [ ] **Step 3: Implement `SpikeApp.swift` and `ReportsView.swift`**
+- [x] **Step 3: Implement `SpikeApp.swift` and `ReportsView.swift`**
 
 `SpikeApp`: a `TabView` with three tabs titled "Audio test", "Stylus", "Reports". The first two show placeholder text until Tasks 5 and 7. On launch, for every run folder with neither `finished` nor `report.txt`, append an event `recovered-at-launch` whose detail is `readable-seconds=<seconds of audio.caf that can be opened, or "unreadable">`, then call `writeReport`.
 
 `ReportsView`: lists `RunStore.all()` by folder name; selecting one shows `report.txt` in a monospaced, selectable `Text` inside a `ScrollView`, with a `ShareLink` for the report file.
 
-- [ ] **Step 4: Write `tools/mac-build.sh`**
+- [x] **Step 4: Write `tools/mac-build.sh`**
 
 Steps, each logged to `build/logs/build-<yyyyMMdd-HHmmss>.log` as well as the screen:
 1. `tools/mac-bootstrap.sh`
@@ -575,7 +575,7 @@ Steps, each logged to `build/logs/build-<yyyyMMdd-HHmmss>.log` as well as the sc
 
 Stop at the first failing step and print the `RESULT:` line described under Interfaces.
 
-- [ ] **Step 5: Write `tools/mac-install.sh`**
+- [x] **Step 5: Write `tools/mac-install.sh`**
 
 Takes `iphone` or `ipad`, and logs to `build/logs/install-<yyyyMMdd-HHmmss>.log`. Steps:
 1. Find the connected device of that kind and its identifier with `xcrun devicectl list devices`.
@@ -601,7 +601,7 @@ Run: `tools/mac-install.sh iphone`, then `tools/mac-install.sh ipad`, each with 
 Expected: `RESULT: INSTALLED on …` twice; the app opens on each device showing the three tabs, and Reports is empty.
 If signing fails from the command line: the owner opens the project in Xcode, picks the device in the toolbar and presses Run once per device, which registers the device; then run the script again.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add spike/project.yml spike/App tools/mac-build.sh tools/mac-install.sh
@@ -634,7 +634,7 @@ final class AudioRunner: ObservableObject {
 }
 ```
 
-- [ ] **Step 1: Implement `AudioRunner.swift`**
+- [x] **Step 1: Implement `AudioRunner.swift`**
 
 Pinned choices:
 - Audio session: category `.record`, mode `.default`, no options (in particular not `.allowBluetooth`); `setPrefersNoInterruptionsFromSystemAlerts(true)`; then `setActive(true)`.
@@ -644,7 +644,7 @@ Pinned choices:
 - Recovery: on `interruption-ended` (whatever its options), on `engine-config-change`, and on the app becoming active while a run is meant to be running, try to activate the session and start the engine again, recording `engine-restart-ok` or `engine-restart-failed`.
 - Write failure: a failed write, or reaching `failWritesAfterSeconds`, records `audio-write-failed`, sets `lastProblem`, and stops the run.
 
-- [ ] **Step 2: Implement `AudioTestView.swift`**
+- [x] **Step 2: Implement `AudioTestView.swift`**
 
 A form with: a run-label picker (`R1` to `R12`); Start and Stop buttons; a live readout of recorded seconds; `lastProblem` in red when set; a "Fail writes after 10 s (test)" toggle. Stop calls `RunStore.writeReport` with the label as title. When `start` throws `MicError.denied`, show exactly: `Microphone access is off. Turn it on in Settings, Privacy & Security, Microphone.` and create no run folder. Leave room below for the camera controls of Task 6.
 
@@ -668,7 +668,7 @@ Expected: both reports show `VERDICT continuous: YES`, with `recorded seconds` w
 Turn on "Fail writes after 10 s (test)", label R1, Start, wait 20 seconds.
 Expected: the run stops by itself, the problem is shown in red, and the report lists an `audio-write-failed` event with `recorded seconds` close to 10.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add spike/App
@@ -706,7 +706,7 @@ enum ClipMuxer {
 }
 ```
 
-- [ ] **Step 1: Implement `CameraController.swift`**
+- [x] **Step 1: Implement `CameraController.swift`**
 
 Pinned choices:
 - `session.automaticallyConfiguresApplicationAudioSession = false`, preset `.high`, back wide-angle camera, one `AVCaptureMovieFileOutput` and one `AVCapturePhotoOutput`. All session work on one serial queue.
@@ -716,11 +716,11 @@ Pinned choices:
 - Clips: `clips/clip-<n>.mov`.
 - Events, with these exact kinds: `camera-open`, `camera-ready`, `camera-close`, `photo` (detail `quiet` or `normal`, plus `suppression-unsupported` when it was asked for and not available), `clip-start` (detail: the `ClipSound` raw value), `clip-stop`, `camera-interrupted` (detail: the reason's name), `camera-interruption-ended`, `camera-runtime-error` (detail: the error).
 
-- [ ] **Step 2: Implement `ClipMuxer.swift`**
+- [x] **Step 2: Implement `ClipMuxer.swift`**
 
 Build an `AVMutableComposition` with the clip's video track (keeping its preferred transform) and the session audio's track over `[audioStartSeconds, audioStartSeconds + durationSeconds]`; export with `AVAssetExportSession` and the preset `AVAssetExportPresetHighestQuality` to a `.mov` at `output`.
 
-- [ ] **Step 3: Add the camera controls to `AudioTestView.swift`**
+- [x] **Step 3: Add the camera controls to `AudioTestView.swift`**
 
 The camera controls are enabled only while a run is going, and the camera is opened with the run's log (`camera.open(log: audio.log!)`). A "Camera" toggle (open and close), a small live preview, a "Quiet shutter" toggle, a "Clip sound" picker over `ClipSound.allCases`, a Photo button, and a Clip button that becomes "Stop clip". On `onClipFinished` with `.muxAfter`: read the run's `buffers.jsonl`, compute `AudioPosition.seconds(atHost: clipStart, …)`, and if it is not nil, mux to `clips/clip-<n>-muxed.mov` and record `clip-muxed` (detail `audio-start=<seconds to three places>`); if it is nil, record `clip-mux-skipped` (detail `no-audio-at-clip-start`).
 
@@ -734,7 +734,7 @@ Expected: `RESULT: OK` then `RESULT: INSTALLED on …`.
 Label R4: Start, Camera on, take two photos (one quiet, one not), record a 10-second clip with "mux" while clapping three times, record another with "session-mic", Stop.
 Expected: the report lists `photo`, `clip-start mux`, `clip-muxed`, `clip-start session-mic` and `clip-stop` events. In the Files app, under Spike, the run folder holds two photos, `clip-1.mov`, `clip-1-muxed.mov` and `clip-2.mov`, and all three clips play.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add spike/App
@@ -765,7 +765,7 @@ stylus draws in pencil-only mode: YES|NO|NOT ANSWERED
 resting palm leaves marks in any-input mode: YES|NO|NOT ANSWERED
 ```
 
-- [ ] **Step 1: Implement `StylusProbeView.swift`**
+- [x] **Step 1: Implement `StylusProbeView.swift`**
 
 Top half: a `UIView` (wrapped for SwiftUI) with `isMultipleTouchEnabled = true` that overrides the four touch methods and counts touches that begin by `UITouch.type` (`.pencil` as pencil; `.direct` as finger), tracks the largest number of touches down at once (overall, and while a pencil touch is down), and notes whether `force` took more than one distinct value. A live readout shows the counts.
 
@@ -783,7 +783,7 @@ Expected: `RESULT: OK` then `RESULT: INSTALLED on …`.
 On the iPad, Stylus tab: touch the top half with a finger, then with the stylus.
 Expected: the counts change, and drawing appears in the bottom half in at least one of the two modes.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add spike/App
@@ -801,7 +801,7 @@ git commit -m "feat(spike): stylus touch-type probe for the iPad"
 - Consumes: the installed app from Tasks 4 to 7.
 - Produces: committed reports for every run below, which Task 9 reads.
 
-- [ ] **Step 1: Write `docs/spike/test-protocol.md`**
+- [x] **Step 1: Write `docs/spike/test-protocol.md`**
 
 Plain language, one numbered action per line, for the owner. Before the runs: charge above 50 percent, turn off Low Power Mode, and do all runs within seven days of the install. The runs:
 
@@ -823,7 +823,7 @@ Plain language, one numbered action per line, for the owner. Before the runs: ch
 
 The document ends with a short table for the owner to fill in: the battery percentages for R11, whether the shutter was heard in each half of R4, and whether the claps matched in R5 and the clips had sound in R6.
 
-- [ ] **Step 2: Write `tools/mac-fetch-results.sh`**
+- [x] **Step 2: Write `tools/mac-fetch-results.sh`**
 
 Takes `iphone` or `ipad`. Copies the app's `Documents/runs` folder from the device into `build/fetched/<hardware model>/` (which git ignores), using `xcrun devicectl device copy from` with the app's data container. Then copies each run's `report.txt`, and nothing else, into `docs/spike/results/<hardware model>/<run folder>/report.txt`. Confirm the exact flags with `xcrun devicectl help device copy from` before writing them. Last line: `RESULT: FETCHED <n> reports`. The audio and clips in `build/fetched/` are where the owner listens and watches for R4, R5 and R6. If the copy cannot be made to work, the fallback is the owner sharing each report from the Reports tab to the Mac by AirDrop and saving it at the same path.
 
