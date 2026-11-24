@@ -13,11 +13,17 @@ final class SessionModel: ObservableObject, Identifiable {
     /// The page's rows, without the note that is being written.
     @Published private(set) var rows: [PageRow] = []
     @Published private(set) var isRecording = false
+    /// What the recorder is doing: recording, paused, interrupted (and why), or stopped.
+    @Published private(set) var recorder: RecorderState = .paused
+    /// True while the latest save has failed.
+    @Published private(set) var hasUnsavedChanges = false
     @Published private(set) var isFinished = false
     @Published private(set) var counter = "0:00"
     @Published private(set) var isLocationOn = false
     @Published private(set) var participants = ""
     @Published private(set) var startedLine = ""
+    /// The title as the owner typed it: empty for a session that has not been named.
+    @Published private(set) var titleAsTyped = ""
     @Published private(set) var notices: [SessionNotice] = []
     /// The note being written. It is shown in the note field, so its row is left off the page.
     @Published private(set) var draft = ""
@@ -142,7 +148,16 @@ final class SessionModel: ObservableObject, Identifiable {
 
     private func tick() {
         controller.saveIfNeeded()
+        // While interrupted, keep trying: the system does not always say when the microphone is free again.
+        if case .interrupted = controller.recorderState {
+            controller.interruptionEnded()
+            publish()
+            return
+        }
         counter = Wording.length(milliseconds: controller.recordedMilliseconds)
+        if hasUnsavedChanges != controller.hasUnsavedChanges {
+            hasUnsavedChanges = controller.hasUnsavedChanges
+        }
     }
 
     private func publish() {
@@ -152,11 +167,14 @@ final class SessionModel: ObservableObject, Identifiable {
         rows = whole.rows.filter { $0.id != open }
         page = whole
         isRecording = controller.isRecording
+        recorder = controller.recorderState
+        hasUnsavedChanges = controller.hasUnsavedChanges
         isFinished = controller.isFinished
         isLocationOn = controller.isLocationOn
         notices = controller.notices
         counter = Wording.length(milliseconds: controller.recordedMilliseconds)
         participants = controller.manifest.participants.joined(separator: ", ")
+        titleAsTyped = controller.manifest.title
         let manifest = controller.manifest
         startedLine = "Since \(Wording.clock(manifest.createdAt, offset: manifest.utcOffset, style: style)) · \(Wording.zone(manifest.utcOffset))"
     }
@@ -166,9 +184,13 @@ extension SessionNotice {
     /// The sentence shown to the owner.
     var text: String {
         switch self {
-        case .couldNotSave(let reason): return "The session could not be saved just now. It will be tried again. (\(reason))"
-        case .couldNotRecord(let reason): return "Recording could not start. (\(reason))"
+        case .couldNotSave(let reason): return "The session could not be saved just now: \(reason). It will be tried again."
+        case .couldNotRecord(let reason): return "Recording could not start: \(reason). It will start as soon as it can."
         case .couldNotTakePhoto(let reason): return reason
+        case .filesMissing(let files):
+            return "\(files.count == 1 ? "One file" : "\(files.count) files") this session listed \(files.count == 1 ? "is" : "are") no longer in its folder and \(files.count == 1 ? "has" : "have") been taken off the page: \(files.joined(separator: ", "))."
+        case .filesNotListed(let files):
+            return "\(files.count == 1 ? "One file" : "\(files.count) files") in this session's folder \(files.count == 1 ? "is" : "are") not on its page (saved just before the app was closed): \(files.joined(separator: ", ")). You can find \(files.count == 1 ? "it" : "them") in the Files app."
         case .recovered(let dropped):
             if dropped.isEmpty {
                 return "The app was closed while this session was recording. Everything saved up to then has been kept."

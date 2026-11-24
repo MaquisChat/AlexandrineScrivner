@@ -1,8 +1,9 @@
 #!/bin/bash
-# Builds the test app signed for one connected device, installs it and opens it.
+# Builds an app signed for one connected device, installs it and opens it.
 #
-#   tools/mac-install.sh iphone
-#   tools/mac-install.sh ipad
+#   tools/mac-install.sh iphone          the stage 0 test app, on the iPhone
+#   tools/mac-install.sh ipad            the stage 0 test app, on the iPad
+#   tools/mac-install.sh iphone app      the notebook app itself, on the iPhone
 #
 # The device must be connected by cable and unlocked.
 # Everything is shown on screen and saved to build/logs/install-<time>.log, with anything that
@@ -42,22 +43,33 @@ fi
 rm -f "$problem"
 echo "Found $DEVICE_MODEL" | tee -a "$LOG"
 
+# Which app: the stage 0 test app unless the second word is "app".
+case "${2:-test}" in
+  test) FOLDER="spike"; PROJECT="spike/Spike.xcodeproj"; SCHEME="Spike"; DERIVED="build/DerivedData" ;;
+  app) FOLDER="App"; PROJECT="App/Scrivner.xcodeproj"; SCHEME="Scrivner"; DERIVED="build/DerivedData-app" ;;
+  *) echo "The second word, if given, must be \"app\"." | tee -a "$LOG"; failed "choosing the app" ;;
+esac
+if [ ! -f "$FOLDER/Local.xcconfig" ]; then
+  echo "$FOLDER/Local.xcconfig is missing. Run tools/mac-bootstrap.sh first." | tee -a "$LOG"
+  failed "local settings"
+fi
+
 generate_project() {
-  (cd spike && ../.tools/xcodegen/bin/xcodegen generate)
+  (cd "$FOLDER" && ../.tools/xcodegen/bin/xcodegen generate)
 }
 
 signed_build() {
   xcodebuild \
-    -project spike/Spike.xcodeproj \
-    -scheme Spike \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
     -destination "platform=iOS,id=$DEVICE_UDID" \
-    -derivedDataPath build/DerivedData \
+    -derivedDataPath "$DERIVED" \
     -allowProvisioningUpdates \
     -allowProvisioningDeviceRegistration \
     build
 }
 
-APP="build/DerivedData/Build/Products/Debug-iphoneos/Spike.app"
+APP="$DERIVED/Build/Products/Debug-iphoneos/$SCHEME.app"
 
 install_app() {
   xcrun devicectl device install app --device "$DEVICE_UDID" "$APP"

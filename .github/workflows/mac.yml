@@ -52,6 +52,8 @@ jobs:
           SCRIVNER_MIN_XCODE: "16"
         run: tools/mac-build.sh
       - name: Walk through the app in the simulator
+        env:
+          SCRIVNER_PRINT_SCREENSHOTS: "1"
         run: tools/mac-walkthrough.sh
       - name: Keep the screenshots
         if: always()
@@ -59,6 +61,13 @@ jobs:
         with:
           name: screenshots-${{ matrix.machine }}
           path: build/screenshots/
+          if-no-files-found: ignore
+      - name: Keep the session folders the app wrote
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walkthrough-sessions-${{ matrix.machine }}
+          path: build/walkthrough-sessions/
           if-no-files-found: ignore
       - name: Keep the build log
         if: always()

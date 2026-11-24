@@ -1,6 +1,7 @@
 import Foundation
 import ScrivnerCore
 import SwiftUI
+import UIKit
 
 /// The app's own state: where sessions are kept, the list of them, and which one is open.
 @MainActor
@@ -10,6 +11,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var installWarning: InstallWarning = .unknown
     @Published var openSession: SessionModel?
     @Published var problem: String?
+    /// What to say before a session starts when storage or battery is low; nil when there is nothing to say.
+    @Published var readiness: String?
+    /// A zip that is ready for the share sheet.
+    @Published var sharing: SharedZip?
 
     /// Where every session's folder lives: Documents/Sessions, visible in the Files app.
     let sessionsRoot: URL
@@ -29,6 +34,8 @@ final class AppModel: ObservableObject {
         if arguments.contains("-resetSessions") {
             try? fileManager.removeItem(at: sessionsRoot)
             try? fileManager.removeItem(at: exportsFile)
+            UserDefaults.standard.removeObject(forKey: "layout")
+            UserDefaults.standard.removeObject(forKey: "locationOnForNewSessions")
         }
         try? fileManager.createDirectory(at: sessionsRoot, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
@@ -49,6 +56,66 @@ final class AppModel: ObservableObject {
         let list = SessionSummary.list(in: sessionsRoot, exports: ExportRecord.load(from: exportsFile))
         sessions = list.sessions
         unreadable = list.unreadable
+    }
+
+    /// Starts a new session, unless storage or battery is low, in which case the owner is asked first.
+    func newSession() {
+        let warnings = ReadinessWarning.check(freeBytes: freeBytes, batteryLevel: batteryLevel, isCharging: isCharging)
+        if warnings.isEmpty {
+            startSession()
+        } else {
+            readiness = warnings.map(\.text).joined(separator: "\n\n")
+        }
+    }
+
+    /// Shares a finished session as one zip.
+    func share(_ summary: SessionSummary) {
+        do {
+            sharing = SharedZip(url: try ShareSession.zip(of: summary.folder.url), sessionId: summary.id)
+        } catch {
+            problem = "The session could not be made ready to share. \(error.localizedDescription)"
+        }
+    }
+
+    /// The share sheet has closed. If the owner went through with it, the session is marked as shared.
+    func finishedSharing(_ zip: SharedZip, completed: Bool) {
+        try? FileManager.default.removeItem(at: zip.url)
+        if completed, let summary = sessions.first(where: { $0.id == zip.sessionId }),
+           let data = try? Data(contentsOf: summary.folder.sessionJSON),
+           let manifest = try? SessionStore.load(summary.folder) {
+            var record = ExportRecord.load(from: exportsFile)
+            record.noteExport(of: manifest, sessionJSON: data, at: Instant(date: Date()))
+            try? record.save(to: exportsFile)
+        }
+        refresh()
+    }
+
+    /// Deletes a session and everything in it. The screen asks first.
+    func delete(_ summary: SessionSummary) {
+        do {
+            try SessionStore.delete(summary.folder)
+            var record = ExportRecord.load(from: exportsFile)
+            record.forget(sessionId: summary.id)
+            try? record.save(to: exportsFile)
+        } catch {
+            problem = "The session could not be deleted. \(error.localizedDescription)"
+        }
+        refresh()
+    }
+
+    private var freeBytes: Int64? {
+        let values = try? sessionsRoot.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        return values?.volumeAvailableCapacityForImportantUsage
+    }
+
+    private var batteryLevel: Double? {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        return Double(UIDevice.current.batteryLevel)
+    }
+
+    private var isCharging: Bool {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        return UIDevice.current.batteryState == .charging || UIDevice.current.batteryState == .full
     }
 
     /// Starts a new session, which begins recording at once, and opens it.

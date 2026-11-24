@@ -91,6 +91,7 @@ struct MarkerLine: View {
 struct PhotoThumbnail: View {
     let url: URL
     let side: CGFloat
+    var square = false
 
     var body: some View {
         Group {
@@ -103,7 +104,7 @@ struct PhotoThumbnail: View {
                     .overlay(Image(systemName: "photo").foregroundStyle(Theme.secondary))
             }
         }
-        .frame(width: side, height: side * 0.75)
+        .frame(width: side, height: square ? side : side * 0.75)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.rule))
     }

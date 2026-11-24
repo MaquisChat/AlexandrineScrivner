@@ -4,6 +4,8 @@ import SwiftUI
 /// The home screen: every session, newest first, and the way to start one.
 struct SessionListView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var showingSettings = false
+    @State private var deleting: SessionSummary?
 
     var body: some View {
         NavigationStack {
@@ -20,6 +22,44 @@ struct SessionListView: View {
             }
             .background(Theme.paper)
             .navigationTitle("Sessions")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityIdentifier("settings")
+                    .accessibilityLabel("Settings")
+                }
+            }
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+        }
+        .sheet(item: $model.sharing) { zip in
+            ShareSheet(url: zip.url) { completed in
+                model.finishedSharing(zip, completed: completed)
+            }
+        }
+        .confirmationDialog(deleting.map { "Delete “\($0.title)”?" } ?? "", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), titleVisibility: .visible) {
+            Button("Delete session", role: .destructive) {
+                if let deleting { model.delete(deleting) }
+                deleting = nil
+            }
+            .accessibilityIdentifier("confirm-delete")
+            Button("Keep it", role: .cancel) { deleting = nil }
+        } message: {
+            Text("Its recording, photos and notes will be removed from this iPhone. This cannot be undone.")
+        }
+        .alert("Before you start", isPresented: Binding(get: { model.readiness != nil }, set: { if !$0 { model.readiness = nil } })) {
+            Button("Start anyway") {
+                model.readiness = nil
+                model.startSession()
+            }
+            Button("Cancel", role: .cancel) { model.readiness = nil }
+        } message: {
+            Text(model.readiness ?? "")
         }
         .fullScreenCover(item: $model.openSession, onDismiss: { model.refresh() }) { session in
             SessionView(session: session)
@@ -50,13 +90,30 @@ struct SessionListView: View {
 
     private var list: some View {
         List {
-            ForEach(model.sessions) { summary in
+            ForEach(model.sessions, id: \.listId) { summary in
                 Button {
                     model.open(summary)
                 } label: {
                     SessionRow(summary: summary, style: model.clockStyle)
                 }
                 .accessibilityIdentifier("session-row")
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        deleting = summary
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .accessibilityIdentifier("delete")
+                    if summary.isFinished {
+                        Button {
+                            model.share(summary)
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                        .tint(Theme.accent)
+                        .accessibilityIdentifier("share")
+                    }
+                }
             }
             ForEach(model.unreadable, id: \.self) { name in
                 VStack(alignment: .leading, spacing: 4) {
@@ -74,7 +131,7 @@ struct SessionListView: View {
 
     private var newSessionButton: some View {
         Button {
-            model.startSession()
+            model.newSession()
         } label: {
             HStack(spacing: 10) {
                 Circle()
@@ -138,7 +195,10 @@ private struct SessionRow: View {
         guard summary.isFinished else { return "Not finished" }
         switch summary.export {
         case .never: return "Not shared yet"
-        case .exported: return "Shared"
+        case .exported(let when):
+            let clock = LocalClock(when, offset: summary.utcOffset)
+            let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            return "Shared \(clock.day) \(months[max(0, min(11, clock.month - 1))]), \(Wording.clock(when, offset: summary.utcOffset, style: style))"
         case .changedSince: return "Changed since it was shared"
         }
     }

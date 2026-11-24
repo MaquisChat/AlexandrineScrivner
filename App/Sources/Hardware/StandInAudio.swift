@@ -11,11 +11,12 @@ final class StandInAudio: AudioRecording {
     private var url: URL?
     private var startedAt: TimeInterval = 0
 
-    func start(writingTo url: URL) throws {
+    func start(writingTo url: URL) throws -> Moment? {
         // A short file at once, so a session that is cut off still has audio to find.
         try Self.writeSilence(seconds: 0.2, to: url)
         self.url = url
         startedAt = ProcessInfo.processInfo.systemUptime
+        return nil      // a stand-in has no first sound to time; "now" is used
     }
 
     func stop() -> Int? {

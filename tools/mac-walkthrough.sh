@@ -6,6 +6,8 @@
 #
 # Runs on a Mac. The simulated phone is "iPhone 17 Pro" unless SCRIVNER_SIMULATOR names another.
 # The log is saved to build/logs/walkthrough-<time>.log, scrubbed like the other logs.
+# The session folders the app wrote in the simulator are copied to build/walkthrough-sessions/ and
+# checked with scrivner-check: what the app writes must be a session folder the checker accepts.
 # Last line: "WALKTHROUGH OK (<n> screenshots)" or "WALKTHROUGH FAILED: <why>, log: <path>".
 set -uo pipefail
 
@@ -41,7 +43,8 @@ xcodebuild test \
   -destination "platform=iOS Simulator,name=$DEVICE,OS=latest" \
   -derivedDataPath build/DerivedData-walkthrough \
   -resultBundlePath "$RESULT" \
-  2>&1 | scrub | tee -a "$LOG" | grep -E "^(Test Case|Test Suite|\*\*|.*error:|.*: error|Testing started|.*passed|.*failed)" || true
+  2>&1 | scrub | tee -a "$LOG" | grep -E "^(Test Case|Test Suite|\*\*|.*error:|.*: error|Testing started|.*passed|.*failed)"
+# The first command's own result: nothing may come between the pipeline and this line.
 status="${PIPESTATUS[0]}"
 
 # The pictures are kept whether or not every step passed: a failed step's picture says why.
@@ -81,5 +84,53 @@ PY
 fi
 ls build/screenshots 2>/dev/null | tee -a "$LOG"
 
+# With SCRIVNER_PRINT_SCREENSHOTS=1, a small copy of each picture is also printed as text, so the
+# pictures can be read back out of a log where the files themselves cannot be fetched.
+if [ "${SCRIVNER_PRINT_SCREENSHOTS:-0}" = "1" ]; then
+  mkdir -p build/screenshots-small
+  for picture in build/screenshots/*.png; do
+    [ -f "$picture" ] || continue
+    small="build/screenshots-small/$(basename "${picture%.png}").jpg"
+    sips -Z 900 -s format jpeg -s formatOptions 55 "$picture" --out "$small" >/dev/null 2>&1 || continue
+    echo "-----BEGIN SCREENSHOT $(basename "$small")-----"
+    base64 -i "$small" | fold -w 160
+    echo "-----END SCREENSHOT-----"
+  done
+  for description in build/screenshots/*.txt; do
+    [ -f "$description" ] || continue
+    echo "-----BEGIN SCREEN DESCRIPTION $(basename "$description")-----"
+    head -c 60000 "$description"
+    echo
+    echo "-----END SCREEN DESCRIPTION-----"
+  done
+fi
+
 [ "$status" -eq 0 ] || fail "a step of the walkthrough did not pass (${count:-0} screenshots were still saved to build/screenshots)"
+
+# What the app wrote. The last step of the walkthrough leaves one finished session behind for this.
+echo "== the session folders the app wrote" | tee -a "$LOG"
+bundle="$(awk -F'= *' '/^BUNDLE_ID_PREFIX/ { print $2; exit }' App/Local.xcconfig).scrivner"
+container="$(xcrun simctl get_app_container booted "$bundle" data 2>>"$LOG")" \
+  || fail "the app's files could not be found in the simulator"
+rm -rf build/walkthrough-sessions
+mkdir -p build/walkthrough-sessions
+cp -R "$container/Documents/Sessions/." build/walkthrough-sessions/ 2>>"$LOG" \
+  || fail "the app's Sessions folder could not be copied out of the simulator"
+
+if ! build_output="$(swift build --package-path Core --product scrivner-check 2>&1)"; then
+  echo "$build_output" | scrub | tee -a "$LOG"
+  fail "the checker does not build"
+fi
+check="$(swift build --package-path Core --show-bin-path)/scrivner-check"
+"$check" build/walkthrough-sessions 2>&1 | scrub | tee -a "$LOG"
+[ "${PIPESTATUS[0]}" -eq 0 ] || fail "the checker does not accept a session folder the app wrote"
+
+# For information only in this stage: the stand-in recorder does not write the tags a real
+# recording will carry, so problems are expected for audio. Stage 1c has to make this pass.
+echo "== what is inside the media files (for information; stand-in hardware)" | tee -a "$LOG"
+exiftool="$(tools/get-exiftool.sh 2>>"$LOG" | tail -1)" || true
+if [ -n "${exiftool:-}" ] && [ -x "$exiftool" ]; then
+  "$check" --media --exiftool "$exiftool" build/walkthrough-sessions 2>&1 | scrub | tee -a "$LOG" || true
+fi
+
 echo "WALKTHROUGH OK (${count:-0} screenshots)"
