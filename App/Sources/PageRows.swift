@@ -9,15 +9,30 @@ struct MarginRow: View {
     @ObservedObject var session: SessionModel
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Text(row.time)
                 .font(.system(size: 12))
                 .monospacedDigit()
                 .foregroundStyle(Theme.secondary)
-                .frame(width: 58, alignment: .trailing)
+                .frame(width: MarginRow.marginWidth(for: session.style), alignment: .trailing)
+                .padding(.top, timeInset)
                 .accessibilityLabel("At \(row.time)")
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// The margin is a little wider when times carry "am" or "pm".
+    static func marginWidth(for style: ClockStyle) -> CGFloat {
+        style == .twelveHour ? 66 : 58
+    }
+
+    /// Sets the small time level with the first line of what is beside it.
+    private var timeInset: CGFloat {
+        switch row.content {
+        case .text: return 5
+        case .photo: return 2
+        case .marker, .video, .ink: return 0
         }
     }
 

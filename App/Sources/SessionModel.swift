@@ -32,6 +32,9 @@ final class SessionModel: ObservableObject, Identifiable {
 
     private let controller: SessionController
     private var timer: Timer?
+    /// The line just handed over as a finished note. When Return is pressed the text field sends
+    /// that same line once more; without this it would be written down twice.
+    private var justFinished: String?
 
     private init(controller: SessionController, style: ClockStyle) {
         self.controller = controller
@@ -76,12 +79,20 @@ final class SessionModel: ObservableObject, Identifiable {
     /// Ends the session and gives every file its checksum.
     func stop() {
         draft = ""
+        justFinished = nil
         controller.stop()
         publish()
     }
 
     /// The note field's text changed. A new line finishes the note and starts the next.
     func noteChanged(_ text: String) {
+        if let finished = justFinished {
+            if text.trimmingCharacters(in: .whitespacesAndNewlines) == finished {
+                draft = ""
+                return
+            }
+            justFinished = nil
+        }
         guard text.contains("\n") else {
             draft = text
             controller.typing(text)
@@ -90,19 +101,26 @@ final class SessionModel: ObservableObject, Identifiable {
         }
         let parts = text.components(separatedBy: "\n")
         controller.typing(parts[0])
-        controller.finishNote()
+        finishOpenNote()
         let rest = parts.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
         draft = rest
         if !rest.isEmpty {
+            justFinished = nil
             controller.typing(rest)
         }
         publish()
     }
 
     func noteFinished() {
-        controller.finishNote()
+        finishOpenNote()
         draft = ""
         publish()
+    }
+
+    private func finishOpenNote() {
+        let words = (controller.openNoteText ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        justFinished = words.isEmpty ? nil : words
+        controller.finishNote()
     }
 
     func takePhoto() {

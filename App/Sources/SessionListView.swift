@@ -179,7 +179,8 @@ private struct SessionRow: View {
     private var detail: String {
         let clock = LocalClock(summary.startedAt, offset: summary.utcOffset)
         func two(_ value: Int) -> String { value < 10 ? "0\(value)" : "\(value)" }
-        var parts = ["\(clock.year)-\(two(clock.month))-\(two(clock.day)) "
+        let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        var parts = ["\(clock.day) \(months[max(0, min(11, clock.month - 1))]) \(clock.year), "
             + Wording.clock(summary.startedAt, offset: summary.utcOffset, style: style)]
         parts.append(Wording.length(milliseconds: summary.recordedMilliseconds) + " recorded")
         if summary.photoCount > 0 {

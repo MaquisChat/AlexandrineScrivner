@@ -141,12 +141,13 @@ struct MarginLayout: View {
     }
 
     private var noteField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .top, spacing: 10) {
             Text(session.draftTime)
                 .font(.system(size: 12))
                 .monospacedDigit()
                 .foregroundStyle(Theme.secondary)
-                .frame(width: 58, alignment: .trailing)
+                .frame(width: MarginRow.marginWidth(for: session.style), alignment: .trailing)
+                .padding(.top, 5)
                 .accessibilityHidden(true)
             TextField("Write a note", text: Binding(get: { session.draft }, set: { session.noteChanged($0) }), axis: .vertical)
                 .font(Theme.note(18))

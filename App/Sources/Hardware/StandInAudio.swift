@@ -38,17 +38,19 @@ final class StandInAudio: AudioRecording {
     }
 
     private static func writeSilence(seconds: Double, to url: URL) throws {
+        // Apple Lossless: silence costs almost nothing to write, so stopping a long "recording" is
+        // quick. (The real recorder writes AAC as it goes.)
         let sampleRate = 16_000.0
         let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVFormatIDKey: kAudioFormatAppleLossless,
             AVSampleRateKey: sampleRate,
             AVNumberOfChannelsKey: 1,
-            AVEncoderBitRateKey: 24_000,
+            AVEncoderBitDepthHintKey: 16,
         ]
         try? FileManager.default.removeItem(at: url)
         // The file is finished off when `file` goes out of scope at the end of this function.
         let file = try AVAudioFile(forWriting: url, settings: settings)
-        let chunk: AVAudioFrameCount = 16_000
+        let chunk: AVAudioFrameCount = 160_000
         guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: chunk) else {
             throw CouldNotWrite()
         }

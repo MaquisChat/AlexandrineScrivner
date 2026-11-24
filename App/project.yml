@@ -20,6 +20,8 @@ targets:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: Scrivner
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UIBackgroundModes: [audio]
         NSMicrophoneUsageDescription: Records the session's audio.
         NSCameraUsageDescription: Takes photos for the session.

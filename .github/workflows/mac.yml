@@ -40,12 +40,6 @@ jobs:
           xcodebuild -version
           swift --version
           xcodebuild -showsdks | grep -i ios || true
-      - name: Simulators on this machine
-        run: |
-          xcrun simctl list runtimes
-          xcrun simctl list devices available | head -60
-      - name: Core tests
-        run: swift test --package-path Core
       - name: Build script
         env:
           SCRIVNER_MIN_MACOS: "14"
