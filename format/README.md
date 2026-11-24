@@ -40,6 +40,7 @@ A `session.json` can have the right shape and still be wrong. A reader should al
 - Every `spanId` names a span in `spans`, and its `offsetMs` is not past the end of that span's audio.
 - Only the last span may be open, that is, have no `endedBy` and no `durationMs`.
 - No file is listed twice.
+- An empty `title` means the session was not given one. Show its local start date and time instead, for example `2026-11-23 10:42`; the recorder does.
 - **A session is finished when no span is open and every listed file has its hash.** Only a finished session should be imported. An unfinished one, like `valid/unfinished.json`, has the right shape, so the schema accepts it; it means the app was still recording or was cut off, and the app repairs and finishes it the next time it opens.
 
 ## Versions

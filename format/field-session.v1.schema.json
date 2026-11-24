@@ -10,7 +10,7 @@
     "format": { "const": "ao-field-session", "description": "Always this text. It says what kind of file this is." },
     "version": { "const": 1, "description": "The version of this format." },
     "id": { "$ref": "#/$defs/id", "description": "The session's own id." },
-    "title": { "type": "string", "description": "The session's title, as the researcher typed it." },
+    "title": { "type": "string", "description": "The session's title, as the researcher typed it. Empty when the session was not given one; a reader then shows its local start date and time instead." },
     "createdAt": { "$ref": "#/$defs/instant", "description": "When the session was created." },
     "utcOffset": { "$ref": "#/$defs/utcOffset", "description": "The device's offset from UTC when the session was created." },
     "timeZone": { "type": "string", "description": "The device's time zone when the session was created, for example Europe/Lisbon." },
