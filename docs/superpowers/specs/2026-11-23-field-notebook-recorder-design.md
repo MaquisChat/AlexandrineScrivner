@@ -5,7 +5,7 @@
 - **Scope of this document:** the iPhone and iPad recorder app and the session folder it produces. The workbench side (importing a session folder and showing photos and notes beside the transcript) is a separate project in the workbench's own repository, designed after this one; section 9 says what it will need from this one.
 - **Working name:** "Alexandrine Scrivner", after this repository. The owner has not named the app. "Scrivener" on its own is an existing writing app that the workbench integrates with, so the full name is used to avoid confusion.
 - **The workbench:** the owner's research workbench, which they call "amanuensis". It is the repository `MaquisChat/AlexandrineOxiana`. Everything said about it here was checked against its code at commit `0ad6506` (2026-11-11).
-- **Mockups:** https://claude.ai/artifact/DXmmJ1nTQupQFifG6zKfhT (private to the owner). Five screens: layout A, layout B, video while writing, hidden, iPad.
+- **Mockups:** https://claude.ai/artifact/DXmmJ1nTQupQFifG6zKfhT (private to the owner). Five screens: layout A, layout B, video while writing, hidden, and the iPad mini.
 
 Throughout, **"owner decision"** marks something the owner said in the design conversation. **"Proposed"** marks a call made on the owner's behalf that they have not explicitly confirmed. Anything unmarked in sections 5 to 8 is proposed.
 
@@ -24,7 +24,7 @@ The reason for the stamps is what happens afterwards. The session is imported in
 ### Goals
 
 1. Continuous audio recording for a whole session, including while the app is in the background or the device is locked.
-2. Typed notes (on-screen keyboard or an attached Apple keyboard) and, on iPad, Apple Pencil handwriting and sketches, on the same page as the recording.
+2. Typed notes (on-screen keyboard or an attached Apple keyboard) and, on iPad, handwriting and sketches with a stylus, on the same page as the recording. The owner's stylus is a third-party one, not an Apple Pencil (section 3).
 3. Photos and video clips taken from inside the notebook, including a photo while a clip is recording.
 4. Every item (note, ink, photo, clip) time-stamped and placed on the audio timeline. Photos and video clips are also geo-stamped (owner decision). Notes and ink carry no location of their own.
 5. A hide button that instantly blanks the screen while recording continues, built so other cover screens can be added later.
@@ -40,6 +40,7 @@ The reason for the stamps is what happens afterwards. The session is imported in
 - Handwriting converted to text.
 - Covers other than the blank screen.
 - Trimming or editing media; a continuous GPS track; an app passcode or Face ID lock; Apple Watch; Android.
+- Taking a photo with the iPhone's hardware buttons (volume or Camera Control), including while the screen is covered. A natural later addition, not part of this project.
 
 ### Anti-goals (these make it a failure even if it "works")
 
@@ -57,12 +58,16 @@ The reason for the stamps is what happens afterwards. The session is imported in
 - The camera stops when the app leaves the foreground or the device locks. Audio may continue in the background. So video and photos are foreground-only; audio is the continuous record.
 - The system's recording indicator (the green or orange dot, and the indicator at the top of the screen while the app records in the background) cannot be hidden or altered by any app.
 - An app cannot send itself to the background. Only the user can, by going home or switching apps.
-- Apple Pencil works on iPad only.
+- Handwriting with a stylus is an iPad feature. The iPhone gets typing only.
 
 **The owner's setup:**
 
 - A Mac, and a **free** Apple developer account (owner decision: "not paid"). Consequences: no TestFlight; an installed app stops launching seven days after it was installed and must be re-installed from the Mac; data on the device survives a re-install.
-- An iPhone and an iPad. The models, their OS versions, the Pencil model, and the Mac's macOS and Xcode versions are not yet known (section 11). They decide the minimum OS the app can target and must be known before stage 0.
+- **Devices (owner, 2026-11-24):** an iPhone 17 Pro, an iPad mini (6th generation), and a third-party stylus that is not an Apple Pencil. What follows from that:
+  - **Minimum OS.** The iPhone 17 Pro shipped with iOS 26, and the iPad mini 6 can run iPadOS 26 and 27. Proposed minimum: iOS and iPadOS 26, which means the iPad must be on 26 or later.
+  - **Small iPad screen.** The iPad mini is 744 by 1133 points. The iPad layout is designed for that size first.
+  - **The stylus may count as a finger.** Whether iPadOS treats this stylus as a pencil or as an ordinary touch is unknown until it is tried on the device. So ink must work with any touch (stylus or finger), and must not depend on pressure, tilt, hover, squeeze, double-tap, or handwriting-to-text. If the stylus is treated as a finger, the system offers no palm rejection, and writing with a resting hand will be unreliable; the remedy would be an Apple Pencil the mini 6 supports (2nd generation or USB-C). Stage 0 finds out which case applies.
+- **The Mac** is still unknown: Apple silicon or Intel, its macOS version, and whether Xcode is installed (section 11). This decides whether the approach works at all. The newest Xcode (27) runs only on Apple silicon Macs with macOS Tahoe 26.6 or later, and a device on iOS or iPadOS 27 needs it. It must be settled before stage 0.
 
 **How the work gets done:**
 
@@ -98,7 +103,7 @@ The page is a single column of **blocks** in the order they were made:
 | Block | Made by | Its time is |
 |---|---|---|
 | Text | typing; a new paragraph starts a new block | when its first character was typed |
-| Ink (iPad) | writing or drawing with Apple Pencil | when its first stroke began; every stroke also keeps its own time |
+| Ink (iPad) | writing or drawing with a stylus or a finger | when its first stroke began; every stroke also keeps its own time |
 | Photo | the Photo button | the moment of capture |
 | Video clip | the Video button, then Stop clip | when the clip started; its length is kept |
 | Marker | the app | recording started, paused, resumed, stopped, or interrupted, with the reason; location switched off or on |
@@ -120,7 +125,7 @@ The same page can be shown two ways. A button in the header switches between the
 - **A, "Times in the margin":** a full recorder bar at the top (recording state, counter, level meter, pause), the clock time of every block down the left margin, and a bottom bar with labelled Photo and Video buttons and a large Hide button.
 - **B, "Plain page":** reads like ordinary notes. The recorder is a small pill showing the counter; there is no margin; photos and clips sit as thumbnails beside the text with their time underneath; three round buttons (photo, video, hide) float at the bottom.
 
-On iPad the capture buttons run down the left edge and the Pencil tools sit at the bottom; both layouts otherwise apply.
+On iPad the capture buttons run down the left edge and the drawing tools sit at the bottom; both layouts otherwise apply. A tool in that set switches between writing by hand and typing, so drawing never depends on the app telling a stylus from a finger.
 
 ### 5.5 Capture
 
@@ -181,7 +186,7 @@ This is the contract between the recorder and the workbench. **It is defined in 
     clip-0001.mov
   ink/                  (iPad stage)
     ink-0001.png        the ink as a picture
-    ink-0001.drawing    the ink as Apple Pencil data
+    ink-0001.drawing    the ink as Apple's drawing data (PencilKit)
 ```
 
 **Rules:**
@@ -300,10 +305,10 @@ Decided by the owner: **a native Apple app, in this repository** (`MaquisChat/Al
 
 Each stage ends with something the owner can use.
 
-0. **Spike (throwaway).** A bare test app, installed on the owner's iPhone, that proves the risky part: session audio keeps recording, without gaps, while a video clip starts and stops, a photo is taken, the app goes to the background, the device locks, and a phone call comes in. Its findings decide the audio pipeline and are written into an ADR. Its code is not kept.
+0. **Spike (throwaway).** A bare test app, installed on the owner's iPhone, that proves the risky part: session audio keeps recording, without gaps, while a video clip starts and stops, a photo is taken, the app goes to the background, the device locks, and a phone call comes in. Its findings decide the audio pipeline and are written into an ADR. On the iPad, the same spike reports whether the owner's stylus arrives as a pencil or as a finger, and whether a resting palm is ignored. Its code is not kept.
 1. **iPhone core.** Sessions, continuous audio (background, lock, interruptions, crash recovery), typed notes, photos, both layouts with the switch, the hide button with the blank cover, location, the session folder with its schema and checker, export, the install warning, and the keyboard shortcut for hide.
 2. **Video clips.** Clips with the floating camera tile, a photo during a clip, and clip-ending rules.
-3. **iPad and Apple Pencil.** The iPad layout, ink blocks with per-stroke times, and ink in the session folder.
+3. **iPad and stylus.** The iPad layout at iPad mini size, ink blocks with per-stroke times, and ink in the session folder.
 
 The workbench project (section 9) can start once stage 1 produces real session folders.
 
@@ -316,10 +321,10 @@ The workbench project (section 9) can start once stage 1 produces real session f
 
 ## 8. Left to the builder
 
-- The app's exact minimum iOS and iPadOS version, once the owner's devices are known (the current release and one before is the expectation).
+- The app's exact minimum iOS and iPadOS version. 26 is proposed (section 3); the builder may raise it to 27 if both devices are on 27 and it simplifies the work.
 - The audio pipeline, subject to the spike and the requirements in sections 5.5 and 7.
 - The keyboard shortcut for hide, avoiding system shortcuts.
-- How ink blocks begin and grow on the iPad page, and the Pencil tool set.
+- How ink blocks begin and grow on the iPad page, and the drawing tool set, within the stylus constraint in section 3.
 - Exact audio and video quality settings, and whether the shutter sound can be suppressed where the system permits.
 - What the session checker is written in, provided it runs on the Mac and on Linux.
 - Visual detail beyond the mockups, which show layout and intent rather than final styling. Colours and typeface follow the workbench's theme (its `packages/ui/src/theme/tokens.css`; interface typeface Goudy Old Style with Sorts Mill Goudy as the free fallback).
@@ -338,7 +343,9 @@ The workbench project (section 9) can start once stage 1 produces real session f
 | Topic | Choice | Whose |
 |---|---|---|
 | What it is | A notebook with a recorder underneath; audio, video, photos and notes in one interface | Owner |
-| Devices | iPhone and iPad; Apple keyboard, on-screen keyboard, Apple Pencil | Owner |
+| Devices | iPhone 17 Pro and iPad mini (6th generation); Apple keyboard, on-screen keyboard, a third-party stylus | Owner |
+| Minimum OS | iOS and iPadOS 26 | Proposed |
+| Ink input | Any touch, stylus or finger; nothing that needs a genuine Apple Pencil | Proposed, from the owner's stylus |
 | Approach | Native Apple app | Owner |
 | Where it lives | Its own repository, `MaquisChat/AlexandrineScrivner` | Owner |
 | Workbench compatibility | Checked against the workbench's code; kept by a session checker and an import step in each device checklist | Owner asked for the check; the mechanism is proposed |
@@ -355,7 +362,7 @@ The workbench project (section 9) can start once stage 1 produces real session f
 | Storage | Inside the app only; not Photos; excluded from iCloud and computer backups | Proposed; backup exclusion to confirm |
 | Transfer | Plain folders in Files and Finder; zip through the share sheet | Proposed |
 | Install warning | Days left shown in the app | Proposed |
-| Order of work | Spike, iPhone core, video, iPad and Pencil; workbench side after stage 1 | Proposed |
+| Order of work | Spike, iPhone core, video, iPad and stylus; workbench side after stage 1 | Proposed |
 | Building and testing | Mac connected to the agent's session for builds and tests; log script as fallback | Proposed; needs the owner's agreement |
 | No network | The app never connects to anything | Proposed |
 
@@ -363,7 +370,7 @@ The workbench project (section 9) can start once stage 1 produces real session f
 
 Asked on 2026-11-23; answers go here and into the sections they affect.
 
-1. **Devices and versions.** Which iPhone and iPad (model names) and which Apple Pencil; the Mac's macOS version and whether Xcode is installed, and which version. These set the minimum OS and confirm the Mac can install onto the devices at all.
+1. **The Mac.** Apple silicon or Intel, its macOS version, and whether Xcode is installed and which version. Also whether the iPhone and iPad are on version 26 or 27. Together these confirm the Mac can install onto the devices at all. (The device models were answered on 2026-11-24; see section 3.)
 2. **Connecting the Mac.** Whether the owner will connect the Mac to the agent's session so builds and tests can be run directly (section 3). If yes, the Mac's versions in question 1 can be read rather than asked.
 
 Flagged earlier and cheap to change later, so not blocking: the reading of "notes of what time they are recording" (5.3), and excluding session media from backups (5.8).
