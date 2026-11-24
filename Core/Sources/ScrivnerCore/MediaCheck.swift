@@ -52,6 +52,22 @@ public enum MediaCheck {
         return found
     }
 
+    /// The files this check looks inside: every span's audio, every photo and every clip whose path
+    /// is a tidy relative path, in the order `session.json` lists them. These are what ExifTool is given.
+    public static func mediaPaths(in manifest: Manifest) -> [String] {
+        var paths = manifest.spans.map(\.file)
+        for item in manifest.items {
+            switch item {
+            case .photo(_, let file, _, _), .video(_, _, _, _, let file, _, _):
+                paths.append(file)
+            case .marker, .text, .ink:
+                break
+            }
+        }
+        var seen = Set<String>()
+        return paths.filter { Manifest.isTidyRelativePath($0) && seen.insert($0).inserted }
+    }
+
     // MARK: - Rules
 
     /// The file's facts, or nil (with a problem recorded) when ExifTool could not read it.
