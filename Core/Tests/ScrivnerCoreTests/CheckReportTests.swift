@@ -3,9 +3,13 @@ import XCTest
 
 final class CheckReportTests: XCTestCase {
     func testCleanReport() {
-        XCTAssertEqual(CheckReport.render(folderName: "S", findings: [], mediaChecked: true), "Session: S\n  Nothing wrong.\n")
-        XCTAssertEqual(CheckReport.render(folderName: "S", findings: [], mediaChecked: false),
+        XCTAssertEqual(CheckReport.render(folderName: "S", findings: [], media: .checked), "Session: S\n  Nothing wrong.\n")
+        XCTAssertEqual(CheckReport.render(folderName: "S", findings: [], media: .notAsked),
                        "Session: S\n  Nothing wrong.\n  Media tags were not checked. Run again with --media to check them.\n")
+        let unfinished = [CheckFinding(.problem, "session.json", "the session was not finished")]
+        XCTAssertEqual(CheckReport.render(folderName: "S", findings: unfinished, media: .skippedUnfinished),
+                       "Session: S\n  PROBLEM  session.json: the session was not finished\n  Media tags were not checked, because the session is not finished.\n")
+        XCTAssertEqual(CheckReport.render(folderName: "S", findings: unfinished, media: .failed), "Session: S\n  PROBLEM  session.json: the session was not finished\n")
     }
     func testMixedReport() {
         let findings = [
@@ -13,7 +17,7 @@ final class CheckReportTests: XCTestCase {
             CheckFinding(.problem, "photos/photo-0001.heic", "says it was taken at 10:45:17 but session.json says 10:45:15"),
             CheckFinding(.problem, "media tags", "could not be checked: ExifTool was not found"),
         ]
-        XCTAssertEqual(CheckReport.render(folderName: "2026-11-23 1042 Market visit [1a2b]", findings: findings, mediaChecked: false), """
+        XCTAssertEqual(CheckReport.render(folderName: "2026-11-23 1042 Market visit [1a2b]", findings: findings, media: .notAsked), """
         Session: 2026-11-23 1042 Market visit [1a2b]
           PROBLEM  photos/photo-0001.heic: says it was taken at 10:45:17 but session.json says 10:45:15
           PROBLEM  media tags: could not be checked: ExifTool was not found

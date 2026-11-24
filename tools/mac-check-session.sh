@@ -6,7 +6,7 @@
 # FOLDER is one session folder, or a folder holding several. The report is shown on screen and
 # saved to build/logs/session-check-<time>.log, with anything that identifies this Mac's owner
 # replaced by a placeholder. Session titles are kept, so read the log before sharing it.
-# Last line: "SESSION CHECK OK (...)" or "SESSION CHECK FAILED (...)".
+# Where the report is saved is said first. Last line: "SESSION CHECK OK (...)" or "SESSION CHECK FAILED (...)".
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -45,7 +45,6 @@ if ! build_output="$(swift build --package-path Core --product scrivner-check 2>
 fi
 check="$(swift build --package-path Core --show-bin-path)/scrivner-check"
 
+echo "The report is also being saved to $ROOT/$LOG" | scrub
 "$check" --media --exiftool "$exiftool" "${folders[@]}" 2>&1 | scrub | tee -a "$LOG"
-status="${PIPESTATUS[0]}"
-echo "Saved to $LOG"
-exit "$status"
+exit "${PIPESTATUS[0]}"

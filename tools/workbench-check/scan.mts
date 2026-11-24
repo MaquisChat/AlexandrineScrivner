@@ -31,6 +31,7 @@ interface Expected { type: string; at: number; utcOffset: string; gps?: Place }
 // What session.json says about each media file.
 const session = JSON.parse(readFileSync(join(folder, "session.json"), "utf8"));
 const expected = new Map<string, Expected>();
+const inkPictures = new Set<string>();
 for (const span of session.spans) {
   expected.set(span.file, { type: "field-recording", at: Date.parse(span.startedAt), utcOffset: span.utcOffset });
 }
@@ -39,6 +40,10 @@ for (const item of session.items) {
     expected.set(item.file, { type: "field-photo", at: Date.parse(item.at), utcOffset: item.utcOffset, gps: item.gps });
   } else if (item.kind === "video") {
     expected.set(item.file, { type: "field-video", at: Date.parse(item.at), utcOffset: item.utcOffset, gps: item.gps });
+  } else if (item.kind === "ink") {
+    // A handwriting picture is a .png, which the workbench takes for a field photo (design spec 6.4).
+    // It is listed in session.json, so it is expected; nothing inside it is compared.
+    inkPictures.add(item.file);
   }
 }
 
@@ -58,6 +63,10 @@ for await (const item of scan) {
   const type: string = item.referenceMetadata?.type;
   const title: string = item.referenceMetadata?.title?.variants?.[0]?.value ?? "";
   const want = expected.get(key);
+  if (!want && inkPictures.has(key)) {
+    console.log(`ok   ${key}: handwriting picture, which the workbench takes as ${type}, "${title}"`);
+    continue;
+  }
   if (!want) {
     fail(`${key}: the workbench would import this, but session.json does not list it (as ${type}, "${title}")`);
     continue;

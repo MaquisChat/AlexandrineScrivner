@@ -49,6 +49,10 @@ fi
 }
 
 commit="$(git -C "$workbench" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+# Say so when the workbench's files differ from that commit, so a result is never credited to the wrong code.
+if [ -n "$(git -C "$workbench" status --porcelain 2>/dev/null)" ]; then
+  commit="$commit with local changes"
+fi
 echo "Workbench at commit $commit"
 echo "Session folder: $(basename "$session")"
 
@@ -65,5 +69,11 @@ if [ "$status" -eq 0 ] && [ -n "$files" ]; then
   echo "WORKBENCH CHECK OK ($files files, $names folder names, workbench $commit)"
   exit 0
 fi
-echo "WORKBENCH CHECK FAILED (${failures:-the check did not finish;} ${failures:+failures, }workbench $commit)"
+if [ -z "$failures" ]; then
+  echo "WORKBENCH CHECK FAILED (the check did not finish; workbench $commit)"
+elif [ "$failures" = "1" ]; then
+  echo "WORKBENCH CHECK FAILED (1 failure, workbench $commit)"
+else
+  echo "WORKBENCH CHECK FAILED ($failures failures, workbench $commit)"
+fi
 exit 1

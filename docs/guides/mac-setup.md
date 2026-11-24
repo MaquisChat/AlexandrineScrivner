@@ -90,4 +90,6 @@ tools/mac-check-session.sh ~/Desktop/Sessions
 
 The checker reads each session and prints, in plain sentences, anything that is wrong: a file that is missing or has changed since the session was finished, or a photo, clip or recording whose time, time zone or place inside the file does not match the session's own record. The last line is `SESSION CHECK OK` or `SESSION CHECK FAILED`. Warnings do not fail the check; problems do.
 
+One thing the checker cannot fix: until the research workbench itself is corrected, it shows the time of an imported **audio** recording wrong by your time-zone offset (photos and clips are right). The recording and the session's own record are not affected. The details and the fix are in `docs/compatibility/workbench-check.md`.
+
 The first run fetches ExifTool, the program that reads the tags inside media files, into the project's `.tools` folder. It is the same build the workbench uses.

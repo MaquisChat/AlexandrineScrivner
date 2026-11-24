@@ -73,6 +73,37 @@ final class SessionCheckTests: XCTestCase {
         XCTAssertEqual(findings(folder), [CheckFinding(.warning, "extra.txt", message),
                                           CheckFinding(.warning, "photos/.hidden-notes", message)])
     }
+    func testAnUnlistedMediaFileSaysTheWorkbenchWouldTakeIt() throws {
+        let folder = try example()
+        try write("x", to: folder, "video/clip-0009.MOV")
+        try write("x", to: folder, "photos/scan.png")
+        let message = "is in the folder but not listed in session.json; the workbench would still import it"
+        XCTAssertEqual(findings(folder), [CheckFinding(.warning, "photos/scan.png", message),
+                                          CheckFinding(.warning, "video/clip-0009.MOV", message)])
+    }
+    func testTheResultSaysWhetherTheSessionIsFinished() throws {
+        XCTAssertTrue(SessionCheck.folder(try example()).isFinished)
+        let empty = SessionFolder(url: root.appendingPathComponent("empty"))
+        XCTAssertFalse(SessionCheck.folder(empty).isFinished)
+    }
+    func testFoldersToCheckIncludeSessionsThatLostTheirManifest() throws {
+        let good = try example()
+        // An interrupted copy: the folder and its media arrived, session.json did not.
+        let lost = root.appendingPathComponent("2026-11-22 0900 Lost [abcd]")
+        try FileManager.default.createDirectory(at: lost.appendingPathComponent("audio"), withIntermediateDirectories: true)
+        let named = root.appendingPathComponent("2026-11-21 1830 [ef01]")
+        try FileManager.default.createDirectory(at: named, withIntermediateDirectories: true)
+        // Not sessions: an ordinary folder, a hidden one, a file.
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("Old stuff"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent(".Trash"), withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: root.appendingPathComponent("readme.txt"))
+
+        let found = SessionCheck.sessionFolders(in: root)
+        XCTAssertEqual(found.map(\.url.lastPathComponent),
+                       ["2026-11-21 1830 [ef01]", "2026-11-22 0900 Lost [abcd]", good.url.lastPathComponent])
+        XCTAssertEqual(SessionCheck.folder(found[1]).findings, [CheckFinding(.problem, "session.json", "is missing")])
+        XCTAssertEqual(SessionCheck.sessionFolders(in: root.appendingPathComponent("Old stuff")), [])
+    }
     func testWhatTheMacLeavesBehindIsIgnored() throws {
         // Finder and AirDrop leave .DS_Store files, and "._name" files beside files copied to some
         // disks. They are not part of the session, and the Mac itself hides the second kind.
@@ -112,6 +143,7 @@ final class SessionCheckTests: XCTestCase {
         try write("photo", to: folder, "photos/photo-0001.heic")
         let unfinished = "the session was not finished: it was still recording, was cut off, or its files have no checksums yet. Open it in the app so it can be finished."
         XCTAssertEqual(findings(folder), [CheckFinding(.problem, "session.json", unfinished)])
+        XCTAssertFalse(SessionCheck.folder(folder).isFinished)
 
         // Stopped, but never given its checksums: still one finding, not one per file.
         try live.endRecording(by: .stop, at: moment(20))
@@ -138,7 +170,7 @@ final class SessionCheckTests: XCTestCase {
         XCTAssertTrue(found.contains(CheckFinding(.problem, "session.json", "items[2].file must be a plain relative path with no hidden or empty parts")), "\(found)")
         XCTAssertFalse(found.contains { $0.subject.contains("outside") }, "\(found)")
         // The photo it used to list is now just a file nobody lists.
-        XCTAssertTrue(found.contains(CheckFinding(.warning, "photos/photo-0001.heic", "is in the folder but not listed in session.json")))
+        XCTAssertTrue(found.contains(CheckFinding(.warning, "photos/photo-0001.heic", "is in the folder but not listed in session.json; the workbench would still import it")))
         XCTAssertEqual(found.count, 2)
     }
 }

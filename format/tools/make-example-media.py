@@ -116,7 +116,8 @@ def make_photo(exiftool, path, item, number):
             f"-GPSLongitude={abs(gps['lon'])}", f"-GPSLongitudeRef={'W' if gps['lon'] < 0 else 'E'}",
         ]
         if "alt" in gps:
-            tags += [f"-GPSAltitude={abs(gps['alt'])}", f"-GPSAltitudeRef={1 if gps['alt'] < 0 else 0}"]
+            # "#" writes the number as it is; without it ExifTool reads a bare 1 as "above sea level".
+            tags += [f"-GPSAltitude={abs(gps['alt'])}", f"-GPSAltitudeRef#={1 if gps['alt'] < 0 else 0}"]
     run([exiftool, "-q", "-overwrite_original"] + tags + [path])
 
 

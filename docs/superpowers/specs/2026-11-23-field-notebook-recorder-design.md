@@ -284,7 +284,7 @@ Checked by reading the workbench's import code (`packages/library/src/import/dev
 - **Placement.** Nothing yet places photos, clips or notes beside the transcript. Each audio span is a separate recording with its own transcript.
 - **Ink pictures.** `.png` is a photo type to the workbench, so ink pictures will arrive as field photos. Acceptable for now; the importer will treat them as ink.
 
-**Checked by running the workbench's code (2026-11-24).** The workbench's own device-import scan was run over the worked example, set at UTC+05:45. Photos and clips arrive with the right time, time zone and place. One fault was found on the workbench's side: it reads the time of an audio file wrong by the time-zone offset. The record, and a four-line fix for the workbench, are in `docs/compatibility/workbench-check.md`.
+**Checked by running the workbench's code (2026-11-24).** The workbench's own device-import scan was run over the worked example, set at UTC+05:45. Photos and clips arrive with the right time, time zone and place. One fault was found on the workbench's side: it reads the time of an audio file wrong by the time-zone offset. The record, and a two-line fix for the workbench, are in `docs/compatibility/workbench-check.md`.
 
 **How compatibility is kept, not assumed:**
 

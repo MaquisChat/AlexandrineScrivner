@@ -1,9 +1,21 @@
 import Foundation
 
 /// The session checker's words: what it prints for each folder, and its verdict.
+/// What happened to the check of what is inside the media files.
+public enum MediaStatus: Sendable {
+    /// It was done.
+    case checked
+    /// It was not asked for.
+    case notAsked
+    /// It was asked for, but the session is not finished, so its files may be half written.
+    case skippedUnfinished
+    /// It was asked for and could not be done; a finding says why.
+    case failed
+}
+
 public enum CheckReport {
     /// The lines for one session folder. Problems first, then warnings, each in the order given.
-    public static func render(folderName: String, findings: [CheckFinding], mediaChecked: Bool) -> String {
+    public static func render(folderName: String, findings: [CheckFinding], media: MediaStatus) -> String {
         var lines = ["Session: \(folderName)"]
         if findings.isEmpty {
             lines.append("  Nothing wrong.")
@@ -14,8 +26,13 @@ public enum CheckReport {
         for finding in findings where finding.severity == .warning {
             lines.append("  warning  \(finding.subject): \(finding.message)")
         }
-        if !mediaChecked {
+        switch media {
+        case .checked, .failed:
+            break
+        case .notAsked:
             lines.append("  Media tags were not checked. Run again with --media to check them.")
+        case .skippedUnfinished:
+            lines.append("  Media tags were not checked, because the session is not finished.")
         }
         return lines.joined(separator: "\n") + "\n"
     }

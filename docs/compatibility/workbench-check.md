@@ -52,12 +52,14 @@ What it means for now: until the workbench is fixed, an audio recording imported
 
 ### The fix, on the workbench's side
 
-Four lines in `packages/library/src/extract/exif.ts`: when Apple's creation date states its time zone, use it as the capture time ahead of the standard creation time. The change is in `docs/compatibility/workbench-audio-time.patch`.
+Two lines of code (and three of comment) in `packages/library/src/extract/exif.ts`: when Apple's creation date states its time zone, use it as the capture time ahead of the standard creation time. The change is in `docs/compatibility/workbench-audio-time.patch`.
 
 It was tried on a local copy of the workbench, which was then put back as it was:
 
-- with the change, the same check gives `WORKBENCH CHECK OK (6 files, 18 folder names, workbench 0ad6506)`;
+- with the change, the same check gives `WORKBENCH CHECK OK (6 files, 18 folder names, workbench 0ad6506)` (the script now adds "with local changes" to that line when the copy differs from its commit);
 - the workbench's own tests for that file still pass (32 passed).
+
+An independent reviewer confirmed the diagnosis and tried the change on a separate copy: both audio files come out at the right moment, and what the workbench reads from the four photos and clips is unchanged. For a Live Photo's clip it gives the same moment as before; photos and files without Apple's keys are untouched. The patch does not yet include a test for the workbench's own test suite.
 
 This session cannot write to the workbench's repository, so the change has not been made there. It needs to be applied in the workbench project.
 
