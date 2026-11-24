@@ -84,7 +84,7 @@ Expected: does not build, `cannot find 'ExifDate' in scope`.
 
 - [ ] **Step 3: Implement.** The new `Instant` initializer goes in `Instant.swift` beside `init?(iso:)` and shares its range checks; `init?(iso:)` should call it.
 
-- [ ] **Step 4: Run all tests.** `swift test --package-path Core`. Expected: 56 tests, 0 failures.
+- [ ] **Step 4: Run all tests.** `swift test --package-path Core`. Expected: 69 tests, 0 failures.
 
 - [ ] **Step 5: Commit.** `feat(core): dates as ExifTool prints them`
 
@@ -213,7 +213,7 @@ func testArgumentsAskForNumbersAndGroups() {
 
 - [ ] **Step 2: Run to see them fail.** `swift test --package-path Core --filter MediaFactsTests`. Expected: `cannot find 'ExifToolOutput' in scope`.
 - [ ] **Step 3: Implement** in `MediaFacts.swift`.
-- [ ] **Step 4: Run all tests.** Expected: 63 tests, 0 failures.
+- [ ] **Step 4: Run all tests.** Expected: 76 tests, 0 failures.
 - [ ] **Step 5: Commit.** `feat(core): read what ExifTool says about a media file`
 
 ---
@@ -317,7 +317,7 @@ Each asserts the exact count of problems and warnings and the subject path.
 
 - [ ] **Step 2: Run to see them fail.** Expected: `cannot find 'MediaCheck' in scope`.
 - [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run all tests.** Expected: 80 tests, 0 failures.
+- [ ] **Step 4: Run all tests.** Expected: 93 tests, 0 failures.
 - [ ] **Step 5: Commit.** `feat(core): check media files against the manifest`
 
 ---
@@ -360,14 +360,11 @@ func testNotesMissingOrStale()                      // remove notes.md → 1 war
 func testRenamedFolder()                            // move the folder to "Renamed" → 1 warning, subject "folder"
 func testUnfinishedSessionGetsOneWarning()          // SessionTimeline with startRecording and a photo, SessionStore.create, photo file written, no finalize → exactly 1 warning (rule 3), 0 problems
 func testPathsOutsideTheFolderAreNeverOpened()      // edit session.json so a photo's file is "../outside.heic", and put a real file at that place → findings include the rule 4 problem for items[n].file and nothing with subject "../outside.heic"
-func testEverySampleTheSchemaRejectsIsRejectedHereToo()   // for each format/invalid/*.json: ManifestCoding.decode throws, or problems(finished: true) is not empty. At least 14 samples are found.
 ```
-
-The last test keeps the promise in ADR 0003 that the Swift reader is strict in the same way as the schema.
 
 - [ ] **Step 2: Run to see them fail.** Expected: `cannot find 'SessionCheck' in scope`.
 - [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run all tests.** Expected: 92 tests, 0 failures.
+- [ ] **Step 4: Run all tests.** Expected: 105 tests, 0 failures.
 - [ ] **Step 5: Commit.** `feat(core): check a session folder against its manifest`
 
 ---
@@ -435,7 +432,7 @@ func testArguments()              // ["a"] → folders ["a"], media false; ["--m
 - [ ] **Step 3: Implement** `CheckReport.swift`, then `main.swift`, then add to `Package.swift`: `.executableTarget(name: "scrivner-check", dependencies: ["ScrivnerCore"], swiftSettings: [.swiftLanguageMode(.v6)])` (match how the existing targets set the language mode).
 - [ ] **Step 4: Run all tests, then the command by hand on the placeholder example.**
 
-Run: `swift test --package-path Core` — expected 96 tests, 0 failures.
+Run: `swift test --package-path Core` — expected 109 tests, 0 failures.
 Run: `swift run --package-path Core scrivner-check format/examples/*` — expected `  Nothing wrong.` then the not-checked line, then `SESSION CHECK OK (1 session, 0 problems, 0 warnings)`, exit 0.
 Run: `swift run --package-path Core scrivner-check` — expected the usage text, exit 2.
 
@@ -446,7 +443,7 @@ Run: `swift run --package-path Core scrivner-check` — expected the usage text,
 ### Task 6: A worked example with real media, somewhere that is not on UTC
 
 **Files:**
-- Create: `format/tools/make-example-media.py`, `format/tools/make-invalid.py`, `tools/get-exiftool.sh`
+- Create: `format/tools/make-example-media.py`, `tools/get-exiftool.sh`
 - Modify: `Core/Sources/ScrivnerCore/ExampleSession.swift`, `Core/Tests/ScrivnerCoreTests/ExampleSessionTests.swift`, `format/examples/` (regenerated), `format/invalid/` (regenerated), `format/README.md`
 
 **Interfaces:**
@@ -471,8 +468,6 @@ What `make-example-media.py` writes, from the manifest's own values:
 
 Tags are written with ExifTool (`-overwrite_original`), and ffmpeg is told not to add its own encoder tag where it can be avoided. The script ends by printing each file's size and the total.
 
-`make-invalid.py` is the script that already produced `format/invalid/`, moved into the repository unchanged apart from its usage line.
-
 Regenerating everything, in order: `UPDATE_EXAMPLE=1 swift test --package-path Core` (new times, placeholder media) → `python3 format/tools/make-example-media.py "format/examples/<folder>" "$(tools/get-exiftool.sh | tail -1)"` → `UPDATE_EXAMPLE=1 swift test --package-path Core` again (checksums of the real media) → `python3 format/tools/make-invalid.py .` → `(cd format && npm run validate)`.
 
 - [ ] **Step 1: Change the golden test first.** In `ExampleSessionTests`: write with `mediaFrom:` the committed folder when it exists; add assertions `manifest.utcOffset.string == "+05:45"`, `manifest.createdAt.iso == "2026-11-23T04:57:10.120Z"`, the folder name still has the prefix `2026-11-23 1042 Market visit [`; and a new test:
@@ -494,12 +489,12 @@ func testCommittedExamplePassesTheFolderCheck() throws {
 With `UPDATE_EXAMPLE=1` the test removes any other folder under `format/examples` before copying, so the old example does not linger.
 
 - [ ] **Step 2: Run to see it fail.** Expected: does not build (`mediaFrom`), then after Step 3's signature exists, fails on the offset assertion.
-- [ ] **Step 3: Implement** the `ExampleSession` change, `tools/get-exiftool.sh`, `make-example-media.py`; move `make-invalid.py` in.
+- [ ] **Step 3: Implement** the `ExampleSession` change, `tools/get-exiftool.sh` and `make-example-media.py`.
 - [ ] **Step 4: Regenerate** in the order above. Remove the old example folder from git.
 - [ ] **Step 5: Verify.**
 
-Run: `swift test --package-path Core` — expected 97 tests, 0 failures.
-Run: `(cd format && npm run validate)` — expected `SCHEMA CHECK OK (1 valid, 14 rejected)`.
+Run: `swift test --package-path Core` — expected 110 tests, 0 failures.
+Run: `(cd format && npm run validate)` — expected `SCHEMA CHECK OK (3 valid, 15 rejected)`.
 Run: `swift run --package-path Core scrivner-check --media --exiftool "$(tools/get-exiftool.sh | tail -1)" format/examples/*` — expected `  Nothing wrong.` and `SESSION CHECK OK (1 session, 0 problems, 0 warnings)`.
 Check: the example folder is under 2 MB in total.
 
@@ -530,7 +525,7 @@ Check: the example folder is under 2 MB in total.
 - [ ] **Step 3: Add the job to `.github/workflows/core.yml`:** job `session-check`, `runs-on: ubuntu-24.04`, `container: swift:6.4.3-noble`, installs `perl`, `curl` and `ca-certificates` with apt, checks out, runs `tools/check-example.sh`.
 - [ ] **Step 4: Mac scripts.** `tools/mac-bootstrap.sh` gains a step that runs `tools/get-exiftool.sh`. `tools/mac-build.sh` gains a step `example check` running `tools/check-example.sh`, after `Core tests`. Write `tools/mac-check-session.sh`. `bash -n` on all four.
 - [ ] **Step 5: Docs.** One paragraph in `README.md`; in `docs/guides/mac-setup.md`, how to check a session folder brought over from the phone.
-- [ ] **Step 6: Run everything.** `swift test --package-path Core && (cd format && npm run validate) && tools/check-example.sh`. Expected: 97 tests, `SCHEMA CHECK OK (1 valid, 14 rejected)`, `EXAMPLE CHECK OK`.
+- [ ] **Step 6: Run everything.** `swift test --package-path Core && (cd format && npm run validate) && tools/check-example.sh`. Expected: 110 tests, `SCHEMA CHECK OK (3 valid, 15 rejected)`, `EXAMPLE CHECK OK`.
 - [ ] **Step 7: Commit and push; confirm the three automatic checks pass on GitHub.** `ci: check the worked example with the session checker`
 
 ---

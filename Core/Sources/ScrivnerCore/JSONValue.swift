@@ -348,7 +348,7 @@ extension JSONValue {
             if isWhole, let whole = Int(text) {
                 return .int(whole)
             }
-            guard let value = Double(text) else { throw error("bad number") }
+            guard let value = Double(text), value.isFinite else { throw error("bad number") }
             return .double(value)
         }
     }

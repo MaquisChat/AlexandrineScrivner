@@ -18,6 +18,7 @@ extension Manifest {
     /// With `finished: true` every span must also be closed and every file hashed.
     public func problems(finished: Bool) -> [ManifestProblem] {
         var found = ProblemList()
+        let spansById = Dictionary(spans.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
 
         // Ids: valid and all different.
         var seenIds = Set<String>()
@@ -51,18 +52,43 @@ extension Manifest {
             guard let point else { return }
             if !(-90.0...90.0).contains(point.lat) { found.add(path + ".lat", "must be between -90 and 90") }
             if !(-180.0...180.0).contains(point.lon) { found.add(path + ".lon", "must be between -180 and 180") }
+            if let alt = point.alt, !alt.isFinite { found.add(path + ".alt", "must be an ordinary number") }
+            if let accuracy = point.accuracyM, !accuracy.isFinite { found.add(path + ".accuracyM", "must be an ordinary number") }
+        }
+
+        // An offset from UTC that could not be written as "+HH:MM" and read back.
+        func checkOffset(_ offset: UTCOffset, _ path: String) {
+            if abs(offset.seconds) > 18 * 3600 { found.add(path, "must be between -18:00 and +18:00") }
+        }
+
+        // Where something falls on the audio: both parts or neither, on a span that exists, inside it.
+        func checkPosition(spanId: String?, offsetMs: Int?, _ base: String) {
+            if (spanId == nil) != (offsetMs == nil) {
+                found.add(base + ".spanId", "spanId and offsetMs go together")
+            } else if let spanId, let offset = offsetMs {
+                if let span = spansById[spanId] {
+                    if offset < 0 {
+                        found.add(base + ".offsetMs", "must not be negative")
+                    } else if let duration = span.durationMs, offset > duration {
+                        found.add(base + ".offsetMs", "is past the end of its span")
+                    }
+                } else {
+                    found.add(base + ".spanId", "names a span that does not exist")
+                }
+            }
         }
 
         // Top level.
         checkId(id, "id")
+        checkOffset(utcOffset, "utcOffset")
         checkPoint(startLocation, "startLocation")
 
         // Spans.
-        let spansById = Dictionary(spans.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for (index, span) in spans.enumerated() {
             let base = "spans[\(index)]"
             checkId(span.id, base + ".id")
             checkPath(span.file, base + ".file")
+            checkOffset(span.utcOffset, base + ".utcOffset")
 
             let isOpen = span.endedBy == nil
             if (span.durationMs == nil) != isOpen {
@@ -96,19 +122,8 @@ extension Manifest {
                 break
             }
 
-            if (placement.spanId == nil) != (placement.offsetMs == nil) {
-                found.add(base + ".spanId", "spanId and offsetMs go together")
-            } else if let spanId = placement.spanId, let offset = placement.offsetMs {
-                if let span = spansById[spanId] {
-                    if offset < 0 {
-                        found.add(base + ".offsetMs", "must not be negative")
-                    } else if let duration = span.durationMs, offset > duration {
-                        found.add(base + ".offsetMs", "is past the end of its span")
-                    }
-                } else {
-                    found.add(base + ".spanId", "names a span that does not exist")
-                }
-            }
+            checkOffset(placement.utcOffset, base + ".utcOffset")
+            checkPosition(spanId: placement.spanId, offsetMs: placement.offsetMs, base)
 
             switch item {
             case .photo(_, _, let sha256, let gps):
@@ -123,11 +138,11 @@ extension Manifest {
                 checkHash(dataSha256, base + ".dataSha256", required: finished)
                 for (strokeIndex, stroke) in strokes.enumerated() {
                     let strokeBase = base + ".strokes[\(strokeIndex)]"
-                    if let offset = stroke.offsetMs, offset < 0 {
-                        found.add(strokeBase + ".offsetMs", "must not be negative")
-                    }
+                    checkPosition(spanId: stroke.spanId, offsetMs: stroke.offsetMs, strokeBase)
                     if stroke.bounds.count != 4 {
                         found.add(strokeBase + ".bounds", "must have exactly four numbers")
+                    } else if !stroke.bounds.allSatisfy(\.isFinite) {
+                        found.add(strokeBase + ".bounds", "must be ordinary numbers")
                     }
                 }
             case .marker, .text:

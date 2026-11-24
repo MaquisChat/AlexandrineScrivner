@@ -97,7 +97,7 @@ public struct LocalClock: Equatable, Sendable {   // an instant seen through an 
 }
 ```
 
-- [ ] **Step 1: Write `Core/Package.swift`**
+- [x] **Step 1: Write `Core/Package.swift`**
 
 ```swift
 // swift-tools-version: 6.0
@@ -115,7 +115,7 @@ let package = Package(
 )
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 ```swift
 import XCTest
@@ -153,21 +153,21 @@ final class InstantTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 3: Run to see it fail**
+- [x] **Step 3: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `Instant`, `UTCOffset` and `LocalClock` as undefined.
 
-- [ ] **Step 4: Implement `Instant.swift`**
+- [x] **Step 4: Implement `Instant.swift`**
 
 Do the calendar arithmetic by hand (days-from-civil), not with `Calendar` or `DateFormatter`, so results cannot depend on the machine's locale or time zone. `init?(iso:)` checks the shape character by character and that the date exists. Offsets are valid from -18:00 to +18:00 with minutes 00 to 59.
 
-- [ ] **Step 5: Run to see it pass**
+- [x] **Step 5: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 6 tests, with 0 failures`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): package with instants and UTC offsets"
@@ -199,7 +199,7 @@ public struct RandomIdSource: IdSource { public init() }
 public struct SeededIdSource: IdSource { public init(seed: UInt64) }   // SplitMix64; same seed, same ids
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -234,21 +234,21 @@ final class IdsTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `UUIDv7`, `SeededIdSource` and `RandomIdSource` as undefined.
 
-- [ ] **Step 3: Implement `Ids.swift`**
+- [x] **Step 3: Implement `Ids.swift`**
 
 Layout: 48 bits of Unix milliseconds, 4 bits `0111`, 12 bits `randomA`, 2 bits `10`, 62 bits `randomB`. `SeededIdSource` advances a SplitMix64 state twice per id.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 10 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): UUIDv7 ids with random and seeded sources"
@@ -274,7 +274,7 @@ public enum Naming {
 }
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -320,23 +320,23 @@ final class NamingTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `Naming` as undefined.
 
-- [ ] **Step 3: Implement `Naming.swift`**
+- [x] **Step 3: Implement `Naming.swift`**
 
 `sanitize`, in this order: NFC (`precomposedStringWithCanonicalMapping`); replace each of `< > : " / \ | ? *` and each scalar in the Unicode general categories Cc with `-`; collapse runs of whitespace to one space; trim leading and trailing spaces and dots; if the name without its extension, upper-cased, is a reserved Windows name, prefix `_`.
 
 `sessionFolderName`: `"<yyyy-MM-dd> <HHmm>"` from `LocalClock(createdAt, offset:)`, then a space and the sanitized title when it is not empty, then `" [<shortId>]"`. If the result is over 150 UTF-8 bytes, drop whole `Character`s from the end of the title until the name with `…` appended to the title fits.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 15 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): file-system-safe names and the session folder name"
@@ -361,7 +361,7 @@ public enum SHA256Hex {
 }
 ```
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -394,21 +394,21 @@ final class SHA256HexTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `SHA256Hex` as undefined.
 
-- [ ] **Step 3: Implement `SHA256Hex.swift`**
+- [x] **Step 3: Implement `SHA256Hex.swift`**
 
 One internal streaming hasher type with `update(_:)` and `finalize() -> String`, implemented twice behind `#if canImport(CryptoKit)`: CryptoKit's `SHA256` on Apple platforms, a plain FIPS 180-4 implementation elsewhere. `ofFile` reads with `FileHandle` in 1 MiB chunks.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 19 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): SHA-256 hashing of data and files"
@@ -439,7 +439,7 @@ public struct JSONParseError: Error, Equatable { public let message: String }
 
 (`Equatable` for `.object` compares keys and values in order.)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -497,23 +497,23 @@ final class JSONValueTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `JSONValue` as undefined.
 
-- [ ] **Step 3: Implement `JSONValue.swift`**
+- [x] **Step 3: Implement `JSONValue.swift`**
 
 Writer rules, which the exact-text test pins: an array whose elements are all scalars is written on one line; any other array or a non-empty object is written one element per line; an empty object is `{}`; doubles are written with Swift's `"\(value)"` (so `12` is `12.0`); non-finite doubles are written as `null`; strings escape `"`, `\`, newline, carriage return, tab, and every other scalar below U+0020 as `\u00XX`, and nothing else.
 
 Parser: a hand-written recursive-descent parser over the UTF-8 bytes, so key order is kept and a duplicate key in one object is an error. A number with no fraction or exponent that fits in `Int` is `.int`; otherwise `.double`.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 23 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): ordered JSON with a deterministic writer and a strict parser"
@@ -585,7 +585,7 @@ Key order in `session.json`, which the tests pin:
 - every item starts `id`, `kind`, then `type` (markers only), `at`, `endAt` (ink only), `utcOffset`, `spanId`, `offsetMs`; then by kind: marker `detail`; text `text`, `modifiedAt`; photo `file`, `sha256`, `gps`; video `durationMs`, `endedBy`, `sound`, `file`, `sha256`, `gps`; ink `file`, `sha256`, `data`, `dataSha256`, `strokes` (each `at`, `offsetMs`, `bounds`)
 - a key whose value is nil is left out, never written as `null`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -690,21 +690,21 @@ final class ManifestCodingTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `Manifest`, `ManifestCoding` and the model types as undefined.
 
-- [ ] **Step 3: Implement `Manifest.swift` and `ManifestCoding.swift`**
+- [x] **Step 3: Implement `Manifest.swift` and `ManifestCoding.swift`**
 
 Decoding is strict: `format` must be `ao-field-session` and `version` must be `1`; an unknown key anywhere is an error whose path is that key (with its parent path); a missing required key is an error at that key's path; a wrong type or a malformed instant, offset or enum value is an error at the value's path. Whole-number JSON values are accepted where a `Double` is expected; a fractional value is rejected where an `Int` is expected. `bounds` must have exactly four numbers. Paths look like `items[3].offsetMs`.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 27 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): the session manifest and its strict JSON coding"
@@ -764,7 +764,7 @@ Behaviour the tests pin:
 - While `needsRecovery` is true, every mutating call except `recoverAfterCrash`, `setTitle` and `setParticipants` throws `.needsRecovery`.
 - Ids come from `ids.next(at: moment.wall)`: one for the session, one per span, one per item, in the order they are made.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -898,21 +898,21 @@ final class SessionTimelineTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `SessionTimeline`, `Moment` and `TimelineError` as undefined.
 
-- [ ] **Step 3: Implement `SessionTimeline.swift`**
+- [x] **Step 3: Implement `SessionTimeline.swift`**
 
 The timeline holds the manifest, the id source, and the host time at which the open span started (nil when not recording). `init(resuming:)` sets `needsRecovery` when any span has no `endedBy`.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 37 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): session timeline with span bookkeeping and crash recovery"
@@ -947,7 +947,7 @@ Rules, each reported at the path shown:
 6. `lat` is within -90...90 and `lon` within -180...180.
 7. With `finished: true`: no span is open, and every span, photo, video and ink item has its hashes.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -1002,21 +1002,21 @@ final class ManifestProblemsTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `problems(finished:)` as undefined.
 
-- [ ] **Step 3: Implement `ManifestProblems.swift`**
+- [x] **Step 3: Implement `ManifestProblems.swift`**
 
 Report problems in manifest order (top level, then spans, then items), and within one object in the order of the rules above. Report one problem per path.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 44 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): consistency checks for a session manifest"
@@ -1040,7 +1040,7 @@ Format, which the test pins. The file is for people; nothing reads it back.
 - Then one paragraph per item, in manifest order, separated by blank lines, each beginning `**<HH:mm>**` in that item's own offset, followed by: for text, a space and the text as typed; for a marker, a space and one of `Recording started`, `Paused`, `Resumed`, `Stopped`, `Interrupted (<detail>)` or `Interrupted`, `Location off`, `Location on`, in italics (`*…*`); for a photo ` [photo: <file>]`; for a video ` [video: <file>, <m:ss>]` (or without the length when it is unknown) with `, no sound` added when `sound` is false; for ink ` [handwriting: <file>]`.
 - The file ends with a single newline. The title and text are written exactly as typed.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -1091,19 +1091,19 @@ final class NotesMarkdownTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `NotesMarkdown` as undefined.
 
-- [ ] **Step 3: Implement `NotesMarkdown.swift`**
+- [x] **Step 3: Implement `NotesMarkdown.swift`**
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 46 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): notes.md rendering"
@@ -1150,7 +1150,7 @@ Behaviour the tests pin:
 - `finalize` hashes every listed file, fills the hashes in, checks `problems(finished: true)`, saves and returns the manifest. A listed file that is not on disk throws `.missingFile(<relative path>)`; any problem throws `.inconsistent`.
 - `renameToMatchTitle` renames the folder when its name differs from `folderName(for:)`, and returns the folder unchanged when it does not. If the target name is taken it throws `.folderExists`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```swift
 import XCTest
@@ -1232,21 +1232,21 @@ final class SessionStoreTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `SessionStore`, `SessionFolder` and `MediaKind` as undefined.
 
-- [ ] **Step 3: Implement `SessionStore.swift`**
+- [x] **Step 3: Implement `SessionStore.swift`**
 
 `save` writes each file to a temporary name in the same folder and renames it into place. `renameToMatchTitle` does not rewrite `session.json`; the caller saves. `sessions(in:)` ignores anything that is not a folder holding `session.json`.
 
-- [ ] **Step 4: Run to see it pass**
+- [x] **Step 4: Run to see it pass**
 
 Run: `swift test --package-path Core`
 Expected: `Executed 50 tests, with 0 failures`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Core && git commit -m "feat(core): the session folder on disk"
@@ -1292,7 +1292,7 @@ The script, with `SeededIdSource(seed: 2026)`, device `iPhone18,1` / `iOS 27.1` 
 
 Each placeholder media file's content is the ASCII text `placeholder for <relative path>\n`. Real media arrives with the checker plan.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```swift
 import XCTest
@@ -1338,45 +1338,45 @@ final class ExampleSessionTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run to see it fail**
+- [x] **Step 2: Run to see it fail**
 
 Run: `swift test --package-path Core`
 Expected: build failure naming `ExampleSession` as undefined.
 
-- [ ] **Step 3: Implement `ExampleSession.swift`, then create the committed copy**
+- [x] **Step 3: Implement `ExampleSession.swift`, then create the committed copy**
 
 Run: `UPDATE_EXAMPLE=1 swift test --package-path Core`, then `swift test --package-path Core`
 Expected: `Executed 51 tests, with 0 failures` both times, and a folder under `format/examples/`.
 
-- [ ] **Step 4: Write `format/field-session.v1.schema.json`**
+- [x] **Step 4: Write `format/field-session.v1.schema.json`**
 
 JSON Schema draft 2020-12. It must say exactly what `ManifestCoding.decode` enforces about shape: the required and optional keys of Task 6, `additionalProperties: false` everywhere, `format` const `ao-field-session`, `version` const `1`, ids matching `^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`, instants matching `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$`, offsets matching `^[+-]\d{2}:\d{2}$`, hashes matching `^[0-9a-f]{64}$`, relative paths matching `^(?![./])(?!.*//)(?!.*/\.)[^\\]+$`, items as a `oneOf` over the five kinds told apart by a `kind` const, `spanId` and `offsetMs` each requiring the other (`dependentRequired`), `durationMs` and `endedBy` on a span each requiring the other, `bounds` with exactly four numbers, `lat` in -90…90 and `lon` in -180…180, whole numbers of at least 0 for `offsetMs` and `durationMs`. Give every property a one-line `description` in plain language, taken from spec section 6.2.
 
-- [ ] **Step 5: Write the samples that must fail**
+- [x] **Step 5: Write the samples that must fail**
 
 Each file in `format/invalid/` is the example's `session.json` with one thing wrong, named for the fault: `missing-device.json`, `wrong-version.json`, `unknown-top-level-key.json`, `unknown-item-kind.json`, `instant-without-milliseconds.json`, `uppercase-hash.json`, `offset-without-span.json`, `span-duration-without-ended-by.json`, `absolute-file-path.json`, `hidden-file-path.json`, `bounds-with-three-numbers.json`, `latitude-out-of-range.json`, `negative-offset.json`, `video-without-sound.json`.
 
-- [ ] **Step 6: Write `format/package.json` and `format/validate.mjs`**
+- [x] **Step 6: Write `format/package.json` and `format/validate.mjs`**
 
 `package.json`: private, `"type": "module"`, one dependency `ajv` pinned to an exact 8.x version, script `"validate": "node validate.mjs"`.
 
 `validate.mjs`: compiles the schema with Ajv's 2020 build (`ajv/dist/2020.js`), strict mode on. Every `examples/*/session.json` must validate; every `invalid/*.json` must not. Prints one line per file (`ok  <path>` or `FAIL <path>: <reason>`), then `SCHEMA CHECK OK (<n> valid, <m> rejected)` and exits 0, or `SCHEMA CHECK FAILED` and exits 1.
 
-- [ ] **Step 7: Run the schema check and see it pass**
+- [x] **Step 7: Run the schema check and see it pass**
 
 Run: `(cd format && npm install --no-audit --no-fund && npm run validate)`
 Expected: last line `SCHEMA CHECK OK (1 valid, 14 rejected)`.
 
-- [ ] **Step 8: Prove the check bites**
+- [x] **Step 8: Prove the check bites**
 
 Temporarily copy the example's `session.json` to `format/invalid/should-not-be-here.json` and run `npm run validate`.
 Expected: `FAIL invalid/should-not-be-here.json` and exit 1. Delete the copy and run again; expected OK.
 
-- [ ] **Step 9: Write `format/README.md`**
+- [x] **Step 9: Write `format/README.md`**
 
 Half a page in plain language: what the folder is, that the schema is the single definition of `session.json`, how to run the two checks, that the example's media files are placeholders for now, and how to regenerate the example (`UPDATE_EXAMPLE=1 swift test --package-path Core`).
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add Core format .gitignore && git commit -m "feat(format): session.json schema, worked example and samples that must fail"
@@ -1393,27 +1393,46 @@ git add Core format .gitignore && git commit -m "feat(format): session.json sche
 **Interfaces:**
 - Consumes: the commands from Tasks 1 to 11.
 
-- [ ] **Step 1: Write `docs/adr/0003-session-folder-format.md`**
+- [x] **Step 1: Write `docs/adr/0003-session-folder-format.md`**
 
 Sections Status (Accepted), Date, Context, Decision, Consequences. Decision points to record: the schema file is the single definition and the Swift decoder mirrors it; `session.json` is written by our own deterministic writer with keys in reading order, so the file is identical on every platform and diffs are small; nil values are left out; one audio file per unbroken span; items carry both the instant and the position on the audio; hashes are filled in when a session is finished; media files are named by kind and number. Consequences: a change to the format means changing the schema, the decoder, the writer and the example together, and a new `version`; numbers 0001 and 0002 are reserved for the stage 0 decisions.
 
-- [ ] **Step 2: Add the Core tests to `tools/mac-build.sh`**
+- [x] **Step 2: Add the Core tests to `tools/mac-build.sh`**
 
 Add a step named `Core tests` running `swift test --package-path Core`, straight after the setup check.
 
-- [ ] **Step 3: Write `.github/workflows/core.yml`**
+- [x] **Step 3: Write `.github/workflows/core.yml`**
 
 Runs on pushes and pull requests. Job `core-tests`: `runs-on: ubuntu-24.04`, `container: swift:6.4.3-noble`, checkout, `swift test --package-path Core`. Job `schema-check`: `runs-on: ubuntu-24.04`, checkout, Node 22, `npm install --no-audit --no-fund` and `npm run validate` in `format/`.
 
-- [ ] **Step 4: Update `README.md` and `.claude/settings.json`**
+- [x] **Step 4: Update `README.md` and `.claude/settings.json`**
 
-- [ ] **Step 5: Run everything once more**
+`README.md` is updated. `.claude/settings.json` was left as it is: this session's permission check refused the change, so a Claude session on the Mac will ask once before running `npm`.
+
+- [x] **Step 5: Run everything once more**
 
 Run: `swift test --package-path Core && (cd format && npm run validate) && bash -n tools/mac-build.sh`
 Expected: `Executed 51 tests, with 0 failures`, then `SCHEMA CHECK OK (1 valid, 14 rejected)`, and no output from `bash -n`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docs/adr tools/mac-build.sh README.md .claude/settings.json .github && git commit -m "docs: session folder format decision; run the core checks on the Mac and automatically"
 ```
+
+---
+
+## Execution record (2026-11-24)
+
+All twelve tasks are done on branch `foundations`. A fresh reviewer then read the whole branch and found one must-fix and five should-fix items; all were fixed in one pass, each with a test that failed first. After the fixes: 64 tests pass, and the schema check ends `SCHEMA CHECK OK (3 valid, 15 rejected)`. The numbers quoted in the steps above (51 tests; 1 valid, 14 rejected) are from before the review.
+
+Changes the review led to, beyond what the tasks above describe:
+
+- A span is closed so that nothing on it sits past the end of its audio (decision 5 in `docs/adr/0003-session-folder-format.md`).
+- `SessionStore.droppingMissingFiles(from:in:)`, for recovery when a file never reached the disk.
+- `SessionStore.save` refuses a manifest its own reader could not read back.
+- `SessionTimeline.setStartLocation`, `setResearcher`; `recoverAfterCrash` now throws unless there is something to recover.
+- Each handwriting stroke carries its own `spanId`.
+- `format/valid/` (two more files the schema must accept), `format/tools/make-invalid.py`, and a Swift test that the broken samples are rejected by the Swift reader too.
+- The schema's item definition stayed `oneOf`; the schema check names the real fault by checking the item against the shape its kind names.
+- The automatic checks also run the Core tests on a Mac.

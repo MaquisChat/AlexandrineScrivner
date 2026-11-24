@@ -102,7 +102,7 @@ final class SessionTimelineTests: XCTestCase {
         var back = SessionTimeline(resuming: t.manifest, ids: SeededIdSource(seed: 2))
         XCTAssertTrue(back.needsRecovery)
         XCTAssertThrowsError(try back.addText("x", at: moment(500))) { XCTAssertEqual($0 as? TimelineError, .needsRecovery) }
-        back.recoverAfterCrash(spanDurationMs: 42_000, at: moment(500))
+        try back.recoverAfterCrash(spanDurationMs: 42_000, at: moment(500))
         XCTAssertFalse(back.needsRecovery); XCTAssertFalse(back.isRecording)
         XCTAssertEqual(back.manifest.spans[0].durationMs, 42_000); XCTAssertEqual(back.manifest.spans[0].endedBy, .crashRecovered)
         guard case .video(_, let d, let e, _, _, _, _) = back.manifest.items[1],
@@ -115,8 +115,66 @@ final class SessionTimelineTests: XCTestCase {
     func testLoadedOpenSessionNeedsRecovery() throws {
         var t = newTimeline()
         try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
-        try t.endRecording(by: .stop, at: moment(10))
-        XCTAssertFalse(SessionTimeline(resuming: t.manifest, ids: SeededIdSource(seed: 2)).needsRecovery)
+        try t.startClip(file: "video/clip-0001.mov", gps: nil, at: moment(5))
+        // Through session.json, as after a crash.
+        let loaded = try ManifestCoding.decode(ManifestCoding.encode(t.manifest))
+        XCTAssertEqual(loaded, t.manifest)
+        XCTAssertNil(loaded.spans[0].endedBy)
+        XCTAssertTrue(SessionTimeline(resuming: loaded, ids: SeededIdSource(seed: 2)).needsRecovery)
+        // A cleanly stopped session does not need it.
+        var stopped = newTimeline()
+        try stopped.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        try stopped.endRecording(by: .stop, at: moment(10))
+        let reloaded = try ManifestCoding.decode(ManifestCoding.encode(stopped.manifest))
+        XCTAssertFalse(SessionTimeline(resuming: reloaded, ids: SeededIdSource(seed: 2)).needsRecovery)
+    }
+    /// A recording with a note typed 44 s in, read back from session.json as after a crash.
+    func crashedWithANoteAt44Seconds() throws -> SessionTimeline {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        try t.addText("the last thing typed", at: moment(44))
+        return SessionTimeline(resuming: try ManifestCoding.decode(ManifestCoding.encode(t.manifest)), ids: SeededIdSource(seed: 2))
+    }
+    func testCrashRecoveryKeepsItemsInsideTheRecoveredAudio() throws {
+        var back = try crashedWithANoteAt44Seconds()
+        try back.recoverAfterCrash(spanDurationMs: 42_000, at: moment(500))
+        XCTAssertEqual(back.manifest.spans[0].durationMs, 42_000)
+        XCTAssertEqual(back.manifest.items[1].placement.offsetMs, 42_000)                    // placed at the end of what was kept
+        XCTAssertEqual(back.manifest.items[1].placement.at.iso, "2026-11-23T10:42:54.120Z")  // its own time is untouched
+        XCTAssertEqual(back.manifest.problems(finished: false), [])
+    }
+    func testCrashRecoveryWithUnreadableAudioKeepsPositions() throws {
+        var back = try crashedWithANoteAt44Seconds()
+        try back.recoverAfterCrash(spanDurationMs: nil, at: moment(500))
+        XCTAssertEqual(back.manifest.spans[0].durationMs, 44_000)     // at least as long as the last thing placed on it
+        XCTAssertEqual(back.manifest.items[1].placement.offsetMs, 44_000)
+        XCTAssertEqual(back.manifest.problems(finished: false), [])
+    }
+    func testAudioShorterThanTheClockKeepsItemsInside() throws {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        try t.addPhoto(file: "photos/photo-0001.heic", gps: nil, at: moment(99.98))
+        try t.endRecording(by: .interruption, audioDurationMs: 99_950, at: moment(100))
+        XCTAssertEqual(t.manifest.items[1].placement.offsetMs, 99_950)
+        XCTAssertEqual(t.manifest.problems(finished: false), [])
+    }
+    func testRecoveryIsRefusedWhenNothingWasCutOff() throws {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        XCTAssertThrowsError(try t.recoverAfterCrash(spanDurationMs: 0, at: moment(5))) { XCTAssertEqual($0 as? TimelineError, .nothingToRecover) }
+        XCTAssertTrue(t.isRecording); XCTAssertNil(t.manifest.spans[0].endedBy)
+        XCTAssertEqual(t.manifest.items.count, 1)
+    }
+    func testStartLocationAndResearcherCanArriveLate() throws {
+        var t = newTimeline()
+        try t.startRecording(file: "audio/audio-001.m4a", at: moment(0))
+        t.setStartLocation(GeoPoint(lat: 27.7046, lon: 85.3076, alt: 1300, accuracyM: 12))
+        t.setResearcher("R")
+        XCTAssertEqual(t.manifest.startLocation, GeoPoint(lat: 27.7046, lon: 85.3076, alt: 1300, accuracyM: 12))
+        XCTAssertEqual(t.manifest.researcher, "R")
+        XCTAssertTrue(t.isRecording)     // still the same live recording
+        t.setStartLocation(nil); t.setResearcher(nil)
+        XCTAssertNil(t.manifest.startLocation); XCTAssertNil(t.manifest.researcher)
     }
     func testIdsAreValidAndUnique() throws {
         var t = newTimeline()

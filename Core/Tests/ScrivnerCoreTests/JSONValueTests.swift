@@ -50,4 +50,9 @@ final class JSONValueTests: XCTestCase {
             XCTAssertThrowsError(try JSONValue.parse(bad), bad)
         }
     }
+    func testNumbersTooLargeToHoldAreRefused() {
+        XCTAssertThrowsError(try JSONValue.parse("1e400"))
+        XCTAssertThrowsError(try JSONValue.parse("[-1e400]"))
+        XCTAssertNoThrow(try JSONValue.parse("[1e308, -1e308, 5e-324]"))
+    }
 }

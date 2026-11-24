@@ -30,6 +30,8 @@ public enum SessionStoreError: Error, Equatable {
     case folderExists(String)
     case missingFile(String)
     case inconsistent([ManifestProblem])
+    /// The manifest could not be read back from what would be written, so nothing was written.
+    case unwritable(String)
 }
 
 /// Creates, saves, loads and finishes session folders.
@@ -60,8 +62,20 @@ public enum SessionStore {
 
     /// Writes `session.json` and `notes.md`. Each is replaced in one step, so a crash mid-save
     /// leaves the previous version, never half a file.
+    ///
+    /// The text is read back before anything is replaced. If our own reader would refuse it
+    /// (a number that is not a number, an impossible offset from UTC), the save is refused with
+    /// `unwritable` and the last good `session.json` stays where it is.
     public static func save(_ manifest: Manifest, to folder: SessionFolder) throws {
-        try Data(ManifestCoding.encode(manifest).utf8).write(to: folder.sessionJSON, options: .atomic)
+        let text = ManifestCoding.encode(manifest)
+        do {
+            _ = try ManifestCoding.decode(text)
+        } catch let problem as ManifestDecodeError {
+            throw SessionStoreError.unwritable("\(problem.path) \(problem.message)")
+        } catch {
+            throw SessionStoreError.unwritable("\(error)")
+        }
+        try Data(text.utf8).write(to: folder.sessionJSON, options: .atomic)
         try Data(NotesMarkdown.render(manifest).utf8).write(to: folder.notes, options: .atomic)
     }
 
@@ -130,6 +144,60 @@ public enum SessionStore {
         }
         try save(result, to: folder)
         return result
+    }
+
+    /// For recovery after the app was cut off: a manifest without the things whose files never
+    /// reached the disk, and the paths that were missing.
+    ///
+    /// A photo, clip or handwriting block with a missing file is removed. A span with no audio file
+    /// is removed, and whatever was placed on it keeps its time but loses its place on the audio.
+    public static func droppingMissingFiles(from manifest: Manifest, in folder: SessionFolder) -> (manifest: Manifest, dropped: [String]) {
+        func isMissing(_ path: String) -> Bool {
+            !FileManager.default.fileExists(atPath: folder.url(forRelativePath: path).path)
+        }
+        var result = manifest
+        var dropped: [String] = []
+
+        var lostSpans = Set<String>()
+        result.spans.removeAll { span in
+            guard isMissing(span.file) else { return false }
+            dropped.append(span.file)
+            lostSpans.insert(span.id)
+            return true
+        }
+
+        result.items.removeAll { item in
+            let missing: [String]
+            switch item {
+            case .photo(_, let file, _, _), .video(_, _, _, _, let file, _, _):
+                missing = [file].filter(isMissing)
+            case .ink(_, _, let file, _, let data, _, _):
+                missing = [file, data].filter(isMissing)
+            case .marker, .text:
+                missing = []
+            }
+            dropped.append(contentsOf: missing)
+            return !missing.isEmpty
+        }
+
+        guard !lostSpans.isEmpty else { return (result, dropped) }
+        for index in result.items.indices {
+            if let spanId = result.items[index].placement.spanId, lostSpans.contains(spanId) {
+                result.items[index].placement.spanId = nil
+                result.items[index].placement.offsetMs = nil
+            }
+            if case .ink(let p, let endAt, let file, let sha256, let data, let dataSha256, var strokes) = result.items[index] {
+                for strokeIndex in strokes.indices {
+                    if let spanId = strokes[strokeIndex].spanId, lostSpans.contains(spanId) {
+                        strokes[strokeIndex].spanId = nil
+                        strokes[strokeIndex].offsetMs = nil
+                    }
+                }
+                result.items[index] = .ink(p, endAt: endAt, file: file, sha256: sha256, data: data,
+                                           dataSha256: dataSha256, strokes: strokes)
+            }
+        }
+        return (result, dropped)
     }
 
     /// Renames the folder when the title has changed. Does not rewrite `session.json`; save separately.

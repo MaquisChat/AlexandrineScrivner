@@ -3,6 +3,15 @@ import Foundation
 import CryptoKit
 #endif
 
+/// Runs `body` inside an autorelease pool where the platform has them, and plainly elsewhere.
+private func withAutoreleasePool(_ body: () throws -> Void) rethrows {
+    #if canImport(ObjectiveC)
+    try autoreleasepool(invoking: body)
+    #else
+    try body()
+    #endif
+}
+
 /// SHA-256 as 64 lower-case hex characters, for data and for files of any size.
 public enum SHA256Hex {
     public static func of(_ data: Data) -> String {
@@ -16,8 +25,17 @@ public enum SHA256Hex {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         var hasher = StreamingSHA256()
-        while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
-            hasher.update(chunk)
+        var reachedEnd = false
+        while !reachedEnd {
+            // Each chunk is released before the next is read. Without the pool, Apple platforms may
+            // keep every chunk alive until this function returns, which for a long clip is the whole file.
+            try withAutoreleasePool {
+                if let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
+                    hasher.update(chunk)
+                } else {
+                    reachedEnd = true
+                }
+            }
         }
         return hasher.finalize()
     }

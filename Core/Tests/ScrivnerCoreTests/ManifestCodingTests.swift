@@ -76,7 +76,8 @@ final class ManifestCodingTests: XCTestCase {
             .photo(p, file: "photos/photo-0001.heic", sha256: hash, gps: GeoPoint(lat: 1.5, lon: -2.5, alt: 3, accuracyM: nil)),
             .video(free, durationMs: 48_000, endedBy: .user, sound: false, file: "video/clip-0001.mov", sha256: nil, gps: nil),
             .ink(p, endAt: p.at.adding(milliseconds: 900), file: "ink/ink-0001.png", sha256: hash, data: "ink/ink-0001.drawing",
-                 dataSha256: hash, strokes: [InkStroke(at: p.at, offsetMs: 65_000, bounds: [0, 0, 10.5, 4])]),
+                 dataSha256: hash, strokes: [InkStroke(at: p.at, spanId: p.spanId, offsetMs: 65_000, bounds: [0, 0, 10.5, 4]),
+                           InkStroke(at: p.at.adding(milliseconds: 400), spanId: nil, offsetMs: nil, bounds: [1, 2, 3, 4])]),
         ]
         XCTAssertEqual(try ManifestCoding.decode(ManifestCoding.encode(m)), m)
     }

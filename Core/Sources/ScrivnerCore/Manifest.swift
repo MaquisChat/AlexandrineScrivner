@@ -101,12 +101,16 @@ public struct Placement: Equatable, Sendable {
 
 public struct InkStroke: Equatable, Sendable {
     public var at: Instant
+    /// The recording span this stroke falls on. A handwriting block can run on across a pause,
+    /// so each stroke says for itself which span it is on. Nil when nothing was recording.
+    public var spanId: String?
     public var offsetMs: Int?
     /// x, y, width, height on the page.
     public var bounds: [Double]
 
-    public init(at: Instant, offsetMs: Int?, bounds: [Double]) {
+    public init(at: Instant, spanId: String?, offsetMs: Int?, bounds: [Double]) {
         self.at = at
+        self.spanId = spanId
         self.offsetMs = offsetMs
         self.bounds = bounds
     }

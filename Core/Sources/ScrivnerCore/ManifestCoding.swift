@@ -95,6 +95,7 @@ public enum ManifestCoding {
             if let dataSha256 { pairs.append(("dataSha256", .string(dataSha256))) }
             pairs.append(("strokes", .array(strokes.map { stroke in
                 var strokePairs: [(key: String, value: JSONValue)] = [("at", .string(stroke.at.iso))]
+                if let spanId = stroke.spanId { strokePairs.append(("spanId", .string(spanId))) }
                 if let offset = stroke.offsetMs { strokePairs.append(("offsetMs", .int(offset))) }
                 strokePairs.append(("bounds", .array(stroke.bounds.map { .double($0) })))
                 return .object(strokePairs)
@@ -209,6 +210,7 @@ public enum ManifestCoding {
             let strokes = try reader.list("strokes").map { strokeValue, strokePath -> InkStroke in
                 var strokeReader = try ObjectReader(strokeValue, path: strokePath)
                 let strokeAt = try strokeReader.instant("at")
+                let strokeSpan = try strokeReader.optional("spanId").map { try Read.string($0.value, $0.path) }
                 let offset = try strokeReader.optional("offsetMs").map { try Read.int($0.value, $0.path) }
                 let boundsList = try strokeReader.list("bounds")
                 guard boundsList.count == 4 else {
@@ -216,7 +218,7 @@ public enum ManifestCoding {
                 }
                 let bounds = try boundsList.map { try Read.double($0.value, $0.path) }
                 try strokeReader.finish()
-                return InkStroke(at: strokeAt, offsetMs: offset, bounds: bounds)
+                return InkStroke(at: strokeAt, spanId: strokeSpan, offsetMs: offset, bounds: bounds)
             }
             result = .ink(placement, endAt: endAt, file: file, sha256: sha256, data: data,
                           dataSha256: dataSha256, strokes: strokes)

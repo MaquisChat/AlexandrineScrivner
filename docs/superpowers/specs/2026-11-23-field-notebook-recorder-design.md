@@ -234,7 +234,7 @@ This is the contract between the recorder and the workbench. **It is defined in 
       "file": "video/clip-0001.mov", "sha256": "…", "gps": {} },
     { "id": "…", "kind": "ink", "at": "…", "endAt": "…", "utcOffset": "+00:00", "spanId": "…", "offsetMs": 300000,
       "file": "ink/ink-0001.png", "data": "ink/ink-0001.drawing",
-      "strokes": [ { "at": "…", "offsetMs": 300000, "bounds": [0, 0, 0, 0] } ] }
+      "strokes": [ { "at": "…", "spanId": "…", "offsetMs": 300000, "bounds": [0, 0, 0, 0] } ] }
   ]
 }
 ```
@@ -243,6 +243,8 @@ This is the contract between the recorder and the workbench. **It is defined in 
 
 - `at` is the instant the item was made. `utcOffset` is the device's offset from UTC at that instant, so local clock time can always be shown again, even after travel.
 - `spanId` and `offsetMs` say where the item falls on the audio: which recording span, and how far into that span's file. They are absent when nothing was recording (paused, or after stop).
+- Each stroke of handwriting has its own `spanId` and `offsetMs`, because a handwriting block can run on across a pause.
+- A position is never past the end of its span's audio. If the app is cut off and the last moments of audio are lost, anything made in those moments is placed at the end of the audio that was kept; its own time, `at`, is unchanged.
 - **`offsetMs` is measured against the audio's own clock, not worked out by subtracting wall-clock times.** If the device clock is corrected or the time zone changes mid-session, positions on the audio stay right.
 - A **span** is one unbroken stretch of recorded audio. Pausing, an interruption, or recovery after a crash ends one span and the next begins a new file. `endedBy` says which.
 - `startLocation` and each item's `gps` are present only if location was on at that moment. Markers of type `location-off` and `location-on` record when the switch changed, so a reader can tell "no location because it was off" from "no location because none was available".

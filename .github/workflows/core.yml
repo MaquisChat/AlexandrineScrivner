@@ -12,20 +12,30 @@ jobs:
     runs-on: ubuntu-24.04
     container: swift:6.4.3-noble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - name: Core tests
+        run: swift test --package-path Core
+
+  core-tests-mac:
+    # The same tests on a Mac, where hashing uses Apple's own library instead of our fallback.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Swift version
+        run: swift --version
       - name: Core tests
         run: swift test --package-path Core
 
   schema-check:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - name: Install the schema checker
         working-directory: format
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Schema check
         working-directory: format
         run: npm run validate

@@ -105,18 +105,13 @@
       }
     },
     "item": {
-      "type": "object",
-      "description": "One thing on the page. Its kind decides which of the five shapes below it must have.",
-      "required": ["kind"],
-      "properties": {
-        "kind": { "enum": ["marker", "text", "photo", "video", "ink"] }
-      },
-      "allOf": [
-        { "if": { "required": ["kind"], "properties": { "kind": { "const": "marker" } } }, "then": { "$ref": "#/$defs/marker" } },
-        { "if": { "required": ["kind"], "properties": { "kind": { "const": "text" } } }, "then": { "$ref": "#/$defs/text" } },
-        { "if": { "required": ["kind"], "properties": { "kind": { "const": "photo" } } }, "then": { "$ref": "#/$defs/photo" } },
-        { "if": { "required": ["kind"], "properties": { "kind": { "const": "video" } } }, "then": { "$ref": "#/$defs/video" } },
-        { "if": { "required": ["kind"], "properties": { "kind": { "const": "ink" } } }, "then": { "$ref": "#/$defs/ink" } }
+      "description": "One thing on the page. Its kind decides which of the five shapes it has.",
+      "oneOf": [
+        { "$ref": "#/$defs/marker" },
+        { "$ref": "#/$defs/text" },
+        { "$ref": "#/$defs/photo" },
+        { "$ref": "#/$defs/video" },
+        { "$ref": "#/$defs/ink" }
       ]
     },
     "marker": {
@@ -135,7 +130,7 @@
         "at": { "$ref": "#/$defs/instant", "description": "The instant it happened." },
         "utcOffset": { "$ref": "#/$defs/utcOffset", "description": "The device's offset from UTC at that instant." },
         "spanId": { "$ref": "#/$defs/id", "description": "The recording span it falls on. Absent when nothing was recording." },
-        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock." },
+        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock. Never past the end of the audio: something made in the last moments of a recording whose tail was lost sits at the end." },
         "detail": { "type": "string", "description": "The reason, for an interruption." }
       }
     },
@@ -151,7 +146,7 @@
         "at": { "$ref": "#/$defs/instant", "description": "When its first character was typed." },
         "utcOffset": { "$ref": "#/$defs/utcOffset", "description": "The device's offset from UTC at that instant." },
         "spanId": { "$ref": "#/$defs/id", "description": "The recording span it falls on. Absent when nothing was recording." },
-        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock." },
+        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock. Never past the end of the audio: something made in the last moments of a recording whose tail was lost sits at the end." },
         "text": { "type": "string", "description": "The note, exactly as typed." },
         "modifiedAt": { "$ref": "#/$defs/instant", "description": "When the note was last changed, if it was changed after it was first typed." }
       }
@@ -168,7 +163,7 @@
         "at": { "$ref": "#/$defs/instant", "description": "The moment of capture." },
         "utcOffset": { "$ref": "#/$defs/utcOffset", "description": "The device's offset from UTC at that instant." },
         "spanId": { "$ref": "#/$defs/id", "description": "The recording span it falls on. Absent when nothing was recording." },
-        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock." },
+        "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio it falls, measured on the audio's own clock. Never past the end of the audio: something made in the last moments of a recording whose tail was lost sits at the end." },
         "file": { "$ref": "#/$defs/relativePath", "description": "The photo file." },
         "sha256": { "$ref": "#/$defs/sha256", "description": "The photo file's hash. Filled in when the session is finished." },
         "gps": { "$ref": "#/$defs/location", "description": "Where it was taken. Present only if location was on." }
@@ -223,9 +218,11 @@
             "type": "object",
             "additionalProperties": false,
             "required": ["at", "bounds"],
+            "dependentRequired": { "spanId": ["offsetMs"], "offsetMs": ["spanId"] },
             "properties": {
               "at": { "$ref": "#/$defs/instant", "description": "When the stroke began." },
-              "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into the item's span the stroke began." },
+              "spanId": { "$ref": "#/$defs/id", "description": "The recording span the stroke falls on. Handwriting can run on across a pause, so each stroke names its own span. Absent when nothing was recording." },
+              "offsetMs": { "$ref": "#/$defs/milliseconds", "description": "How far into that span's audio the stroke began. Never past the end of the audio." },
               "bounds": {
                 "type": "array",
                 "items": { "type": "number" },

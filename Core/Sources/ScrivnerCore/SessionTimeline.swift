@@ -23,6 +23,7 @@ public enum TimelineError: Error, Equatable {
     case needsRecovery
     case noSuchItem(String)
     case clipAlreadyEnded(String)
+    case nothingToRecover
 }
 
 /// Keeps a session's manifest as things happen: opens and closes recording spans, and gives every
@@ -76,6 +77,16 @@ public struct SessionTimeline: Sendable {
         manifest.participants = participants
     }
 
+    public mutating func setResearcher(_ researcher: String?) {
+        manifest.researcher = researcher
+    }
+
+    /// Where the session began. Recording starts at once and the first location fix usually
+    /// arrives a few seconds later, so this can be set at any time.
+    public mutating func setStartLocation(_ location: GeoPoint?) {
+        manifest.startLocation = location
+    }
+
     // MARK: - Recording
 
     /// Opens a new span. Returns its id.
@@ -101,13 +112,8 @@ public struct SessionTimeline: Sendable {
         guard let start = openSpanHostStart, let index = manifest.spans.indices.last else {
             throw TimelineError.notRecording
         }
-        let duration = max(0, audioDurationMs ?? Self.milliseconds(from: start, to: moment.host))
-
-        // The closing marker sits on the span it closes, never past the span's end.
-        var placement = place(at: moment)
-        if let offset = placement.offsetMs {
-            placement.offsetMs = min(offset, duration)
-        }
+        // The closing marker sits on the span it closes.
+        let placement = place(at: moment)
         let type: MarkerType
         var markerDetail = detail
         switch end {
@@ -120,17 +126,19 @@ public struct SessionTimeline: Sendable {
         }
         manifest.items.append(.marker(placement, type: type, detail: markerDetail))
 
-        manifest.spans[index].durationMs = duration
-        manifest.spans[index].endedBy = end
+        closeSpan(at: index, by: end,
+                  durationMs: audioDurationMs ?? Self.milliseconds(from: start, to: moment.host))
         openSpanHostStart = nil
     }
 
     /// After the app was cut off: closes what was left open and notes the interruption.
-    /// `spanDurationMs` is how much of the open span's audio can be read; nil counts as none.
-    public mutating func recoverAfterCrash(spanDurationMs: Int?, at moment: Moment) {
+    /// `spanDurationMs` is how much of the open span's audio can be read. Nil means the length
+    /// could not be read; the span is then taken to be as long as the last thing placed on it.
+    /// Throws `nothingToRecover` unless `needsRecovery` is true, so a healthy recording is never closed by mistake.
+    public mutating func recoverAfterCrash(spanDurationMs: Int?, at moment: Moment) throws {
+        guard needsRecovery else { throw TimelineError.nothingToRecover }
         for index in manifest.spans.indices where manifest.spans[index].endedBy == nil {
-            manifest.spans[index].durationMs = max(0, spanDurationMs ?? 0)
-            manifest.spans[index].endedBy = .crashRecovered
+            closeSpan(at: index, by: .crashRecovered, durationMs: spanDurationMs)
         }
         for index in manifest.items.indices {
             if case .video(let p, let durationMs, nil, let sound, let file, let sha256, let gps) = manifest.items[index] {
@@ -204,6 +212,49 @@ public struct SessionTimeline: Sendable {
     public mutating func setLocation(enabled: Bool, at moment: Moment) throws {
         guard !needsRecovery else { throw TimelineError.needsRecovery }
         manifest.items.append(.marker(place(at: moment), type: enabled ? .locationOn : .locationOff, detail: nil))
+    }
+
+    // MARK: - Closing a span
+
+    /// Closes a span and keeps everything on it inside its audio.
+    ///
+    /// When the audio's length is known and something was placed after its end (the last moments
+    /// of a recording can be lost when the app is cut off), that thing is moved to the end of the
+    /// audio; its own time (`at`) is left alone. When the length is not known, the span is as long
+    /// as the last thing placed on it.
+    private mutating func closeSpan(at index: Int, by end: SpanEnd, durationMs known: Int?) {
+        let spanId = manifest.spans[index].id
+        var furthest = 0
+        for item in manifest.items {
+            if item.placement.spanId == spanId, let offset = item.placement.offsetMs {
+                furthest = max(furthest, offset)
+            }
+            if case .ink(_, _, _, _, _, _, let strokes) = item {
+                for stroke in strokes where stroke.spanId == spanId {
+                    furthest = max(furthest, stroke.offsetMs ?? 0)
+                }
+            }
+        }
+        let duration = max(0, known ?? furthest)
+        if furthest > duration {
+            for itemIndex in manifest.items.indices {
+                if manifest.items[itemIndex].placement.spanId == spanId,
+                   let offset = manifest.items[itemIndex].placement.offsetMs, offset > duration {
+                    manifest.items[itemIndex].placement.offsetMs = duration
+                }
+                if case .ink(let p, let endAt, let file, let sha256, let data, let dataSha256, var strokes) = manifest.items[itemIndex] {
+                    for strokeIndex in strokes.indices where strokes[strokeIndex].spanId == spanId {
+                        if let offset = strokes[strokeIndex].offsetMs, offset > duration {
+                            strokes[strokeIndex].offsetMs = duration
+                        }
+                    }
+                    manifest.items[itemIndex] = .ink(p, endAt: endAt, file: file, sha256: sha256, data: data,
+                                                     dataSha256: dataSha256, strokes: strokes)
+                }
+            }
+        }
+        manifest.spans[index].durationMs = duration
+        manifest.spans[index].endedBy = end
     }
 
     // MARK: - Placing

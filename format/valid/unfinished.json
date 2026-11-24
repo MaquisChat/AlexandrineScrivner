@@ -1,0 +1,63 @@
+{
+  "format": "ao-field-session",
+  "version": 1,
+  "id": "01a206c3-e0e8-709d-832a-5cd27a6b13a1",
+  "title": "Still recording",
+  "createdAt": "2026-11-23T04:57:10.120Z",
+  "utcOffset": "+05:45",
+  "timeZone": "Asia/Kathmandu",
+  "participants": [],
+  "device": {
+    "model": "iPhone18,1",
+    "os": "iOS 27.1",
+    "app": "0.1.0"
+  },
+  "spans": [
+    {
+      "id": "01a206c3-e0e8-726d-812e-6299272e6df0",
+      "file": "audio/audio-001.m4a",
+      "startedAt": "2026-11-23T04:57:10.120Z",
+      "utcOffset": "+05:45",
+      "timeZone": "Asia/Kathmandu"
+    }
+  ],
+  "items": [
+    {
+      "id": "01a206c3-e0e8-79c4-8d4b-c9e17ab0580e",
+      "kind": "marker",
+      "type": "recording-started",
+      "at": "2026-11-23T04:57:10.120Z",
+      "utcOffset": "+05:45",
+      "spanId": "01a206c3-e0e8-726d-812e-6299272e6df0",
+      "offsetMs": 0
+    },
+    {
+      "id": "01a206c4-0fc8-7f64-87ac-e7416bba95ea",
+      "kind": "text",
+      "at": "2026-11-23T04:57:22.120Z",
+      "utcOffset": "+05:45",
+      "spanId": "01a206c3-e0e8-726d-812e-6299272e6df0",
+      "offsetMs": 12000,
+      "text": "Typed while the recorder runs."
+    },
+    {
+      "id": "01a206c4-2f08-7976-b50c-98db4db2062a",
+      "kind": "photo",
+      "at": "2026-11-23T04:57:30.120Z",
+      "utcOffset": "+05:45",
+      "spanId": "01a206c3-e0e8-726d-812e-6299272e6df0",
+      "offsetMs": 20000,
+      "file": "photos/photo-0001.heic"
+    },
+    {
+      "id": "01a206c4-5a00-7f60-8114-efd7eabd0c1d",
+      "kind": "video",
+      "at": "2026-11-23T04:57:41.120Z",
+      "utcOffset": "+05:45",
+      "spanId": "01a206c3-e0e8-726d-812e-6299272e6df0",
+      "offsetMs": 31000,
+      "sound": true,
+      "file": "video/clip-0001.mov"
+    }
+  ]
+}
