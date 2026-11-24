@@ -203,6 +203,7 @@ private struct PlainBlockView: View {
                     .foregroundStyle(Theme.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
                     .accessibilityIdentifier("marker")
                 Rectangle().fill(Theme.rule).frame(height: 1)
             }

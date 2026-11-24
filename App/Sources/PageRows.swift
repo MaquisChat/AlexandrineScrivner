@@ -94,6 +94,8 @@ struct MarkerLine: View {
                 .font(Theme.ui(12, .semibold))
                 .foregroundStyle(isAboutRecording ? Theme.recording : Theme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                // The words come first; the rule takes what is left of the line.
+                .layoutPriority(1)
                 .accessibilityIdentifier("marker")
             Rectangle()
                 .fill(Theme.rule)

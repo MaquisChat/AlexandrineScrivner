@@ -35,12 +35,32 @@ echo "== app project generation" | tee -a "$LOG"
 (cd App && ../.tools/xcodegen/bin/xcodegen generate) 2>&1 | scrub | tee -a "$LOG"
 [ "${PIPESTATUS[0]}" -eq 0 ] || fail "the app's project could not be generated"
 
+# The newest simulator of that name, by its own identifier, so that the same one can be asked
+# afterwards for the files the app wrote.
+SIMULATOR="$(xcrun simctl list devices available -j 2>>"$LOG" | /usr/bin/python3 -c '
+import json, re, sys
+want = sys.argv[1]
+found = []
+for runtime, devices in json.load(sys.stdin).get("devices", {}).items():
+    version = re.search(r"iOS-(\d+)-(\d+)", runtime)
+    if not version:
+        continue
+    for device in devices:
+        if device.get("name") == want and device.get("isAvailable", True):
+            found.append(((int(version.group(1)), int(version.group(2))), device["udid"]))
+print(sorted(found)[-1][1] if found else "")
+' "$DEVICE")"
+[ -n "$SIMULATOR" ] || fail "there is no simulator called $DEVICE"
+xcrun simctl boot "$SIMULATOR" >>"$LOG" 2>&1 || true        # already booted is fine
+xcrun simctl bootstatus "$SIMULATOR" -b >>"$LOG" 2>&1 || fail "the simulator did not start"
+
 echo "== walkthrough on $DEVICE" | tee -a "$LOG"
 rm -rf "$RESULT" build/screenshots build/screenshots-raw
 xcodebuild test \
   -project App/Scrivner.xcodeproj \
   -scheme Scrivner \
-  -destination "platform=iOS Simulator,name=$DEVICE,OS=latest" \
+  -destination "platform=iOS Simulator,id=$SIMULATOR" \
+  -parallel-testing-enabled NO \
   -derivedDataPath build/DerivedData-walkthrough \
   -resultBundlePath "$RESULT" \
   2>&1 | scrub | tee -a "$LOG" | grep -E "^(Test Case|Test Suite|\*\*|.*error:|.*: error|Testing started|.*passed|.*failed)"
@@ -110,7 +130,8 @@ fi
 # What the app wrote. The last step of the walkthrough leaves one finished session behind for this.
 echo "== the session folders the app wrote" | tee -a "$LOG"
 bundle="$(awk -F'= *' '/^BUNDLE_ID_PREFIX/ { print $2; exit }' App/Local.xcconfig).scrivner"
-container="$(xcrun simctl get_app_container booted "$bundle" data 2>>"$LOG")" \
+xcrun simctl bootstatus "$SIMULATOR" -b >>"$LOG" 2>&1 || true
+container="$(xcrun simctl get_app_container "$SIMULATOR" "$bundle" data 2>>"$LOG")" \
   || fail "the app's files could not be found in the simulator"
 rm -rf build/walkthrough-sessions
 mkdir -p build/walkthrough-sessions
