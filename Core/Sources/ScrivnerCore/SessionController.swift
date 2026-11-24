@@ -137,8 +137,9 @@ public final class SessionController {
 
     /// Opens an existing session to read it, add to it, or resume recording.
     ///
-    /// If it was cut off (the app was closed mid-recording) it is repaired first. Anything it lists
-    /// whose file is gone is taken off the page. A notice says what was done.
+    /// If it was cut off (the app was closed mid-recording) it is repaired first, and left
+    /// complete: its files get their checksums, with no "Stopped" line, since the owner did not
+    /// stop it. Anything it lists whose file is gone is taken off the page. A notice says what was done.
     ///
     /// Location is off if the session was switched off when it was last open, or if `locationOn`
     /// (the app's setting) is off now. `audioLength` reads an audio file's own length in
@@ -189,7 +190,12 @@ public final class SessionController {
             controller.attempt { try controller.timeline.setLocation(enabled: false, at: clock.now()) }
             changed = true
         }
-        if changed {
+        if wasCutOff {
+            // Everything is closed now, so the session is made complete as it stands: it can be
+            // copied out and checked without anyone having to open it and press Stop. The owner can
+            // still resume it; that makes it unfinished again until the next Stop.
+            controller.finish()
+        } else if changed {
             controller.save()
         }
         return controller

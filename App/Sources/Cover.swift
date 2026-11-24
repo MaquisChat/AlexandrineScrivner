@@ -20,6 +20,8 @@ struct BlankCover: Cover {
             .accessibilityLabel("Hidden")
             .accessibilityHint("Double tap to bring the page back")
             .accessibilityAddTraits(.isButton)
+            // With VoiceOver on, its own double tap is what arrives here.
+            .accessibilityAction(.default, dismiss)
             .accessibilityIdentifier("cover")
     }
 }

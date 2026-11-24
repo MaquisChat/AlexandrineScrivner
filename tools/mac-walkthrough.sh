@@ -126,6 +126,8 @@ if [ "${SCRIVNER_PRINT_SCREENSHOTS:-0}" = "1" ]; then
 fi
 
 [ "$status" -eq 0 ] || fail "a step of the walkthrough did not pass (${count:-0} screenshots were still saved to build/screenshots)"
+# A walk that passed without leaving a single picture did not really run.
+[ "${count:-0}" -gt 0 ] || fail "the walkthrough passed but saved no screenshots"
 
 # What the app wrote. The last step of the walkthrough leaves one finished session behind for this.
 echo "== the session folders the app wrote" | tee -a "$LOG"

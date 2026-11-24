@@ -3,7 +3,7 @@
 #
 #   tools/mac-install.sh iphone          the stage 0 test app, on the iPhone
 #   tools/mac-install.sh ipad            the stage 0 test app, on the iPad
-#   tools/mac-install.sh iphone app      the notebook app itself, on the iPhone
+#   tools/mac-install.sh iphone app      the notebook app itself, on the iPhone (iPhone only so far)
 #
 # The device must be connected by cable and unlocked.
 # Everything is shown on screen and saved to build/logs/install-<time>.log, with anything that
@@ -42,6 +42,12 @@ if ! find_device "${1:-}" 2> "$problem"; then
 fi
 rm -f "$problem"
 echo "Found $DEVICE_MODEL" | tee -a "$LOG"
+
+# The notebook app is for the iPhone only so far; its iPad version is a later stage.
+if [ "${1:-}" = "ipad" ] && [ "${2:-test}" = "app" ]; then
+  echo "The notebook app is for the iPhone only at this stage. Use: tools/mac-install.sh iphone app" | tee -a "$LOG"
+  failed "choosing the app"
+fi
 
 # Which app: the stage 0 test app unless the second word is "app".
 case "${2:-test}" in

@@ -41,6 +41,10 @@ final class SessionRecoveryTests: XCTestCase {
         let c = try reopen(folder, audioLength: 42_000)
         XCTAssertEqual(c.notices, [.recovered(dropped: [])])
         XCTAssertFalse(c.isRecording)
+        // Repaired and complete as it stands: it can be copied out and checked without being opened again.
+        XCTAssertTrue(c.isFinished)
+        XCTAssertEqual(SessionCheck.folder(c.folder).findings, [])
+        XCTAssertEqual(c.recorderState, .paused)                   // not "stopped": the owner did not stop it
         XCTAssertEqual(c.manifest.spans.map(\.endedBy), [.crashRecovered])
         XCTAssertEqual(c.manifest.spans.map(\.durationMs), [42_000])
         let rows = c.page(style: .twentyFourHour).rows

@@ -6,90 +6,135 @@ import SwiftUI
 /// buttons float at the bottom.
 struct PlainLayout: View {
     @ObservedObject var session: SessionModel
+    @ObservedObject var focus: WritingFocus
     let actions: SessionActions
-    @FocusState private var writing: Bool
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            VStack(spacing: 0) {
-                header
-                NoticeBanner(notices: session.notices) { session.clearNotices() }
-                StateBanner(session: session)
-                page
-            }
-            floatingButtons
-                .padding(.bottom, 14)
+        VStack(spacing: 0) {
+            TrialBanner()
+            header
+            NoticeBanner(notices: session.notices) { session.clearNotices() }
+            StateBanner(session: session)
+            page
         }
     }
 
+    // MARK: - The header
+
+    /// The controls sit on a line of their own, above the title, so that neither a long title nor
+    /// large text can push one of them off the screen.
     private var header: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                LayoutSwitch(isMargin: false, action: actions.switchLayout)
+                SessionMenu(session: session, actions: actions)
+                if session.isFinished && !session.isRecording {
+                    Button("Close", action: actions.close)
+                        .font(Theme.ui(15, .semibold))
+                        .fixedSize()
+                        .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("close")
+                }
+                Spacer(minLength: 0)
+                pill
+            }
+            Button(action: actions.details) {
                 Text(session.page.title)
                     .font(Theme.note(26))
                     .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(2)
-                    .accessibilityIdentifier("session-title")
-                Text(session.startedLine)
-                    .font(Theme.ui(13))
-                    .foregroundStyle(Theme.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
-            Spacer(minLength: 0)
-            SessionMenu(session: session, actions: actions)
-            LayoutSwitch(isMargin: false, action: actions.switchLayout)
-            Button {
-                session.isRecording ? session.pause() : session.resume()
-            } label: {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(session.isRecording ? Theme.recording : Theme.outline)
-                        .frame(width: 9, height: 9)
-                    Text(session.counter)
-                        .font(Theme.ui(15, .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.ink)
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .background(Theme.pill)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(Theme.rule))
-            }
-            .accessibilityIdentifier("pause-resume")
-            .accessibilityLabel(session.isRecording ? "Recording, \(session.counter). Pause" : "Paused at \(session.counter). Resume")
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("session-title")
+            .accessibilityHint("Changes the title and participants")
+            Text(session.participants.isEmpty ? session.startedLine : "\(session.participants) · \(session.startedLine)")
+                .font(Theme.ui(13))
+                .foregroundStyle(Theme.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            LocationButton(session: session, action: actions.toggleLocation)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 10)
+        .padding(.top, 10)
+        .padding(.bottom, 2)
     }
+
+    /// The recorder, small: a red dot and the counter while recording; the word for what it is
+    /// doing instead of the dot when it is not.
+    private var pill: some View {
+        Button {
+            session.isRecording ? session.pause() : session.resume()
+        } label: {
+            HStack(spacing: 8) {
+                if session.isRecording {
+                    Circle()
+                        .fill(Theme.recording)
+                        .frame(width: 9, height: 9)
+                } else {
+                    Image(systemName: stateSymbol)
+                        .font(Theme.ui(12))
+                        .foregroundStyle(Theme.ink)
+                    Text(session.stateWord)
+                        .font(Theme.ui(15, .semibold))
+                        .foregroundStyle(Theme.ink)
+                }
+                Text(session.counter)
+                    .font(Theme.ui(15, .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.ink)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 44)
+            .background(Theme.pill)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(session.isRecording ? Theme.rule : Theme.ink, lineWidth: session.isRecording ? 1 : 1.5))
+        }
+        .accessibilityIdentifier("pause-resume")
+        .accessibilityLabel(session.isRecording ? "Pause recording" : "Resume recording")
+        .accessibilityValue("\(session.stateWord), \(session.counter)")
+    }
+
+    private var stateSymbol: String {
+        switch session.recorder {
+        case .recording: return "record.circle"
+        case .paused: return "pause.fill"
+        case .interrupted: return "exclamationmark.triangle.fill"
+        case .stopped: return "stop.fill"
+        }
+    }
+
+    // MARK: - The page
 
     private var page: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 20) {
                     ForEach(PlainBlock.blocks(from: session.rows)) { block in
-                        PlainBlockView(block: block, session: session)
+                        PlainBlockView(block: block, session: session, onEdit: actions.edit)
                     }
-                    TextField("Write a note", text: Binding(get: { session.draft }, set: { session.noteChanged($0) }), axis: .vertical)
-                        .font(Theme.note(19))
-                        .foregroundStyle(Theme.ink)
-                        .lineSpacing(5)
-                        .focused($writing)
-                        .submitLabel(.return)
-                        .onSubmit {
-                            session.noteFinished()
-                            writing = true
-                        }
-                        .accessibilityIdentifier("note-field")
+                    NoteEntry(session: session, focus: focus, size: 19)
                         .id("note-field")
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
-                .padding(.bottom, 110)
+                .padding(.bottom, 16)
             }
             .scrollDismissesKeyboard(.interactively)
+            // The buttons take their own room at the bottom, above the keyboard when it is up,
+            // so the line being written is never underneath them.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                floatingButtons
+                    .padding(.top, 6)
+                    .padding(.bottom, 10)
+            }
             .onChange(of: session.rows.count) {
                 withAnimation { proxy.scrollTo("note-field", anchor: .bottom) }
+            }
+            .onAppear {
+                proxy.scrollTo("note-field", anchor: .bottom)
             }
         }
     }
@@ -100,16 +145,14 @@ struct PlainLayout: View {
             RoundButton(systemImage: "video", label: "Video", identifier: "video") {}
                 .disabled(true)
                 .opacity(0.4)
-            RoundButton(systemImage: "eye.slash", label: "Hide", identifier: "hide", filled: true) {
-                writing = false
-                actions.hide()
-            }
+                .accessibilityHint("Video clips come in a later version")
+            RoundButton(systemImage: "eye.slash", label: "Hide", identifier: "hide", filled: true, action: actions.hide)
         }
         .padding(8)
         .background(Theme.paper)
         .clipShape(Capsule())
         .overlay(Capsule().stroke(Theme.rule))
-        .shadow(color: Theme.ink.opacity(0.14), radius: 10, y: 6)
+        .shadow(color: Color.black.opacity(0.14), radius: 10, y: 6)
     }
 }
 
@@ -126,7 +169,7 @@ private struct RoundButton: View {
             Image(systemName: systemImage)
                 .font(Theme.ui(21))
                 .frame(width: 56, height: 56)
-                .foregroundStyle(filled ? Color.white : Theme.ink)
+                .foregroundStyle(filled ? Theme.onInk : Theme.ink)
                 .background(filled ? Theme.ink : Theme.paper)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(filled ? Theme.ink : Theme.outline))
@@ -141,7 +184,8 @@ private struct RoundButton: View {
 struct PlainBlock: Identifiable {
     enum Kind {
         case marker(String)
-        case note(text: String?, edited: Bool, media: [PageRow])
+        /// A note (nil when photos stand on their own) and what was made straight after it.
+        case note(row: PageRow?, media: [PageRow])
     }
 
     let id: String
@@ -156,14 +200,14 @@ struct PlainBlock: Identifiable {
             case .marker(let text):
                 blocks.append(PlainBlock(id: row.id, kind: .marker(text)))
                 index += 1
-            case .text(let text, let edited):
+            case .text:
                 var media: [PageRow] = []
                 var next = index + 1
                 while next < rows.count, rows[next].isMedia {
                     media.append(rows[next])
                     next += 1
                 }
-                blocks.append(PlainBlock(id: row.id, kind: .note(text: text, edited: edited, media: media)))
+                blocks.append(PlainBlock(id: row.id, kind: .note(row: row, media: media)))
                 index = next
             case .photo, .video, .ink:
                 var media: [PageRow] = []
@@ -172,7 +216,7 @@ struct PlainBlock: Identifiable {
                     media.append(rows[next])
                     next += 1
                 }
-                blocks.append(PlainBlock(id: row.id, kind: .note(text: nil, edited: false, media: media)))
+                blocks.append(PlainBlock(id: row.id, kind: .note(row: nil, media: media)))
                 index = next
             }
         }
@@ -192,6 +236,7 @@ private extension PageRow {
 private struct PlainBlockView: View {
     let block: PlainBlock
     @ObservedObject var session: SessionModel
+    let onEdit: (PageRow) -> Void
 
     var body: some View {
         switch block.kind {
@@ -207,24 +252,13 @@ private struct PlainBlockView: View {
                     .accessibilityIdentifier("marker")
                 Rectangle().fill(Theme.rule).frame(height: 1)
             }
-        case .note(let text, let edited, let media):
+        case .note(let row, let media):
             HStack(alignment: .top, spacing: 14) {
-                VStack(alignment: .leading, spacing: 2) {
-                    if let text {
-                        Text(text)
-                            .font(Theme.note(19))
-                            .lineSpacing(5)
-                            .foregroundStyle(Theme.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("note")
-                    }
-                    if edited {
-                        Text("edited")
-                            .font(Theme.ui(11))
-                            .foregroundStyle(Theme.secondary)
-                    }
+                if let row, case .text(let text, let edited) = row.content {
+                    NoteText(text: text, edited: edited, size: 19) { onEdit(row) }
+                } else {
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 if !media.isEmpty {
                     VStack(spacing: 10) {
                         ForEach(media) { row in
@@ -255,7 +289,7 @@ private struct PlainMedia: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Theme.ink)
                     .frame(width: 76, height: 76)
-                    .overlay(Image(systemName: "play.fill").foregroundStyle(Color.white))
+                    .overlay(Image(systemName: "play.fill").foregroundStyle(Theme.onInk))
                     .accessibilityLabel("Video clip made at \(row.time)")
             default:
                 RoundedRectangle(cornerRadius: 8)

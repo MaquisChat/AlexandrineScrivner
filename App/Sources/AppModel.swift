@@ -15,17 +15,22 @@ final class AppModel: ObservableObject {
     @Published var readiness: String?
     /// A zip that is ready for the share sheet.
     @Published var sharing: SharedZip?
+    /// What was found and put right when the app opened: sessions cut off when it was last closed.
+    @Published var launchNotes: [String] = []
 
     /// Where every session's folder lives: Documents/Sessions, visible in the Files app.
     let sessionsRoot: URL
     /// When each session was last shared. Kept beside the sessions folder, never inside a session.
     let exportsFile: URL
-    /// True when a UI test is driving the app: stand-in location is switched on by its own argument.
-    let isUITesting: Bool
 
     init() {
+        // The arguments the automatic walkthrough passes only mean anything in the simulator.
+        // On a real phone nothing can make the app clear its sessions.
+        #if targetEnvironment(simulator)
         let arguments = ProcessInfo.processInfo.arguments
-        isUITesting = arguments.contains("-uiTesting")
+        #else
+        let arguments: [String] = []
+        #endif
         let fileManager = FileManager.default
         let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         sessionsRoot = documents.appendingPathComponent("Sessions", isDirectory: true)
@@ -37,13 +42,51 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.removeObject(forKey: "layout")
             UserDefaults.standard.removeObject(forKey: "locationOnForNewSessions")
         }
+        standInLocationIsOn = arguments.contains("-uiTestingLocation")
         try? fileManager.createDirectory(at: sessionsRoot, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
+        // Sessions stay on this phone: they are kept out of iCloud and computer backups. Set on the
+        // folder, and again at every launch, because each save replaces the files inside it.
+        var keptOut = URLResourceValues()
+        keptOut.isExcludedFromBackup = true
+        var root = sessionsRoot
+        try? root.setResourceValues(keptOut)
+        refreshInstallWarning()
+        repairSessionsThatWereCutOff()
+        refresh()
+    }
+
+    /// How long this install has left, read from the app's own install profile.
+    func refreshInstallWarning() {
         if let profile = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
            let data = try? Data(contentsOf: profile) {
             installWarning = InstallWarning.state(expires: InstallWarning.expiry(inProfile: data), now: Instant(date: Date()))
         }
-        refresh()
+    }
+
+    /// A session that was recording when the app was last closed is put right as soon as the app
+    /// opens: closed at the length of the audio that was kept, and made complete, so it can be
+    /// copied out as it stands. The list says what was done.
+    private func repairSessionsThatWereCutOff() {
+        for folder in SessionStore.sessions(in: sessionsRoot) {
+            guard let manifest = try? SessionStore.load(folder),
+                  SessionTimeline(resuming: manifest, ids: RandomIdSource()).needsRecovery else { continue }
+            // Location is left exactly as the session had it; the setting applies when it is next opened.
+            guard let repaired = try? SessionController.open(
+                folder, locationOn: true, clock: SystemClock(), audio: StandInAudio(),
+                location: StandInLocation(isOn: false), ids: RandomIdSource(),
+                audioLength: { StandInAudio.length(of: $0) }) else { continue }
+            var note = "“\(repaired.manifest.displayTitle)” was still recording when the app was last closed. Everything saved up to then has been kept."
+            for notice in repaired.notices {
+                if case .recovered(let dropped) = notice, !dropped.isEmpty {
+                    note += " Not kept, because \(dropped.count == 1 ? "it" : "they") had not been saved: \(dropped.joined(separator: ", "))."
+                }
+                if case .filesNotListed(let files) = notice {
+                    note += " In its folder but not on its page: \(files.joined(separator: ", "))."
+                }
+            }
+            launchNotes.append(note)
+        }
     }
 
     var clockStyle: ClockStyle {
@@ -73,7 +116,7 @@ final class AppModel: ObservableObject {
         do {
             sharing = SharedZip(url: try ShareSession.zip(of: summary.folder.url), sessionId: summary.id)
         } catch {
-            problem = "The session could not be made ready to share. \(error.localizedDescription)"
+            problem = "The session could not be made ready to share. Check that the phone has free storage, then try again."
         }
     }
 
@@ -98,7 +141,7 @@ final class AppModel: ObservableObject {
             record.forget(sessionId: summary.id)
             try? record.save(to: exportsFile)
         } catch {
-            problem = "The session could not be deleted. \(error.localizedDescription)"
+            problem = "The session could not be deleted."
         }
         refresh()
     }
@@ -120,22 +163,24 @@ final class AppModel: ObservableObject {
 
     /// Starts a new session, which begins recording at once, and opens it.
     func startSession() {
+        guard openSession == nil else { return }
         do {
             openSession = try SessionModel.start(in: sessionsRoot, locationOn: locationOnForNewSessions,
                                                  standInLocation: standInLocationIsOn, style: clockStyle)
         } catch {
-            problem = "The session could not be started. \(error.localizedDescription)"
+            problem = "The session could not be started. Check that the phone has free storage, then try again."
         }
         refresh()
     }
 
     /// Opens a session from the list. One that was cut off is repaired first.
     func open(_ summary: SessionSummary) {
+        guard openSession == nil else { return }
         do {
             openSession = try SessionModel.open(summary.folder, locationOn: locationOnForNewSessions,
                                                 standInLocation: standInLocationIsOn, style: clockStyle)
         } catch {
-            problem = "The session could not be opened. \(error.localizedDescription)"
+            problem = "The session could not be opened. Its recordings are still in its folder, which you can see in the Files app."
         }
         refresh()
     }
@@ -150,7 +195,6 @@ final class AppModel: ObservableObject {
         UserDefaults.standard.object(forKey: "locationOnForNewSessions") as? Bool ?? true
     }
 
-    private var standInLocationIsOn: Bool {
-        ProcessInfo.processInfo.arguments.contains("-uiTestingLocation")
-    }
+    /// The stand-in location chip gives a place only when the walkthrough asks it to.
+    private let standInLocationIsOn: Bool
 }

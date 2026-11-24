@@ -32,9 +32,8 @@ final class SessionModel: ObservableObject, Identifiable {
 
     private let controller: SessionController
     private var timer: Timer?
-    /// The line just handed over as a finished note. When Return is pressed the text field sends
-    /// that same line once more; without this it would be written down twice.
-    private var justFinished: String?
+    /// True for a session that has just been started: its screen opens with the keyboard up.
+    var isNew = false
 
     private init(controller: SessionController, style: ClockStyle) {
         self.controller = controller
@@ -53,7 +52,9 @@ final class SessionModel: ObservableObject, Identifiable {
             title: nil, participants: [], researcher: nil, device: ThisDevice.info, locationOn: locationOn, in: root,
             clock: SystemClock(), audio: StandInAudio(), location: StandInLocation(isOn: standInLocation),
             ids: RandomIdSource())
-        return SessionModel(controller: controller, style: style)
+        let model = SessionModel(controller: controller, style: style)
+        model.isNew = true
+        return model
     }
 
     static func open(_ folder: SessionFolder, locationOn: Bool, standInLocation: Bool, style: ClockStyle) throws -> SessionModel {
@@ -62,6 +63,16 @@ final class SessionModel: ObservableObject, Identifiable {
             location: StandInLocation(isOn: standInLocation), ids: RandomIdSource(),
             audioLength: { StandInAudio.length(of: $0) })
         return SessionModel(controller: controller, style: style)
+    }
+
+    /// One word for what the recorder is doing.
+    var stateWord: String {
+        switch recorder {
+        case .recording: return "Recording"
+        case .paused: return "Paused"
+        case .interrupted: return "Interrupted"
+        case .stopped: return "Stopped"
+        }
     }
 
     // MARK: - What the owner does
@@ -79,48 +90,51 @@ final class SessionModel: ObservableObject, Identifiable {
     /// Ends the session and gives every file its checksum.
     func stop() {
         draft = ""
-        justFinished = nil
         controller.stop()
         publish()
     }
 
-    /// The note field's text changed. A new line finishes the note and starts the next.
+    /// The note field's text changed. Pasted text with several paragraphs becomes a note for
+    /// each, with the last left in the field to go on writing.
     func noteChanged(_ text: String) {
-        if let finished = justFinished {
-            if text.trimmingCharacters(in: .whitespacesAndNewlines) == finished {
-                draft = ""
-                return
-            }
-            justFinished = nil
-        }
         guard text.contains("\n") else {
             draft = text
             controller.typing(text)
             publish()
             return
         }
-        let parts = text.components(separatedBy: "\n")
-        controller.typing(parts[0])
-        finishOpenNote()
-        let rest = parts.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        draft = rest
-        if !rest.isEmpty {
-            justFinished = nil
-            controller.typing(rest)
+        var paragraphs = text.components(separatedBy: "\n")
+        let last = paragraphs.removeLast()
+        for paragraph in paragraphs {
+            controller.typing(paragraph)
+            controller.finishNote()
         }
+        draft = last
+        controller.typing(last)
         publish()
     }
 
+    /// Return was pressed: the note is finished and the field is empty for the next.
     func noteFinished() {
-        finishOpenNote()
+        controller.finishNote()
         draft = ""
         publish()
     }
 
-    private func finishOpenNote() {
-        let words = (controller.openNoteText ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        justFinished = words.isEmpty ? nil : words
-        controller.finishNote()
+    /// An older note was changed. Empty text removes it.
+    func revise(noteId: String, text: String) {
+        controller.revise(noteId: noteId, text: text)
+        publish()
+    }
+
+    func setParticipants(_ text: String) {
+        controller.setParticipants(text)
+        publish()
+    }
+
+    /// The app is leaving the front: save what is pending now.
+    func saveNow() {
+        controller.saveIfNeeded()
     }
 
     func takePhoto() {

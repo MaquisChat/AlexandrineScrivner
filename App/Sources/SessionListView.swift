@@ -4,14 +4,19 @@ import SwiftUI
 /// The home screen: every session, newest first, and the way to start one.
 struct SessionListView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingSettings = false
     @State private var deleting: SessionSummary?
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                TrialBanner()
                 if !model.installWarning.text.isEmpty {
                     InstallBanner(warning: model.installWarning)
+                }
+                if !model.launchNotes.isEmpty {
+                    LaunchNotes(notes: model.launchNotes) { model.launchNotes = [] }
                 }
                 if model.sessions.isEmpty && model.unreadable.isEmpty {
                     emptyState
@@ -64,6 +69,15 @@ struct SessionListView: View {
         .fullScreenCover(item: $model.openSession, onDismiss: { model.refresh() }) { session in
             SessionView(session: session)
                 .environmentObject(model)
+        }
+        .onChange(of: scenePhase) {
+            // Back in front: the days left on the install, and the list, may have changed meanwhile.
+            if scenePhase == .active {
+                model.refreshInstallWarning()
+                if model.openSession == nil {
+                    model.refresh()
+                }
+            }
         }
         .alert("Something went wrong", isPresented: Binding(get: { model.problem != nil }, set: { if !$0 { model.problem = nil } })) {
             Button("OK", role: .cancel) {}
@@ -214,9 +228,39 @@ private struct InstallBanner: View {
             .font(Theme.ui(13, warning.isUrgent ? .semibold : .regular))
             .foregroundStyle(warning.isUrgent ? Color.white : Theme.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(warning.isUrgent ? Theme.recording : Theme.strip)
+            .background(warning.isUrgent ? Theme.alarm : Theme.strip)
             .accessibilityIdentifier("install-warning")
+    }
+}
+
+/// What was found and put right when the app opened. Stays until the owner says OK.
+private struct LaunchNotes: View {
+    let notes: [String]
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                    Text(note)
+                        .font(Theme.ui(13))
+                        .foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("launch-notice")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Button("OK", action: onDismiss)
+                .font(Theme.ui(13, .semibold))
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityIdentifier("dismiss-launch-notice")
+                .accessibilityLabel("OK, dismiss")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Theme.accentWash)
     }
 }

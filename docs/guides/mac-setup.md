@@ -96,12 +96,24 @@ The first run fetches ExifTool, the program that reads the tags inside media fil
 
 ## 10. Putting the notebook app on the iPhone
 
-The notebook app can be installed the same way as the test app, with one more word:
+The notebook app can be installed the same way as the test app, with one more word. If you set the Mac up before the notebook app existed, run the setup script once more first; it adds the one settings file the app needs and changes nothing else:
+
+```bash
+tools/mac-bootstrap.sh
+```
 
 ```bash
 tools/mac-install.sh iphone app
 ```
 
-What to expect from this version: every screen is there (the session list, the page in both layouts, the hide button, settings, sharing and deleting), and it writes real session folders. Its microphone and camera are still stand-ins. A session's recording is silence of the right length, and a photo is a drawn picture that says "Stand-in photo". The real microphone and camera come once the test app's runs (step 6 onwards) have shown which way of recording holds up on your phone.
+**This is a trial version. Do not use it for a real interview.** Its microphone, camera and location are stand-ins:
 
-It is worth installing anyway, to see whether the page, the two layouts and the hide button feel right in the hand.
+- A session's recording is silence of the right length. No sound is recorded at all.
+- A photo is a drawn picture that says "Stand-in photo".
+- Nothing is located. The location switch works and is written on the page, but no place is ever stored.
+
+The app says so itself, in a red line at the top of every screen, until the real microphone and camera are in. Those come once the test app's runs (step 6 onwards) have shown which way of recording holds up on your phone.
+
+Everything else is real: the session list, the page in both layouts, typing and editing notes, the title and participant codes, the hide button, settings, sharing and deleting. It writes real session folders, which you can see in the Files app under the app's name. Sessions are left out of iCloud and computer backups, so the only copies are the one on the phone and the ones you share.
+
+It is worth installing to see whether the page, the two layouts and the hide button feel right in the hand. It is for the iPhone only so far; the iPad version is a later stage.

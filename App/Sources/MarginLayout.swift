@@ -5,11 +5,12 @@ import SwiftUI
 /// down the left margin, and a bottom bar with labelled buttons.
 struct MarginLayout: View {
     @ObservedObject var session: SessionModel
+    @ObservedObject var focus: WritingFocus
     let actions: SessionActions
-    @FocusState private var writing: Bool
 
     var body: some View {
         VStack(spacing: 0) {
+            TrialBanner()
             recorderBar
             strip
             NoticeBanner(notices: session.notices) { session.clearNotices() }
@@ -28,17 +29,19 @@ struct MarginLayout: View {
                 .frame(width: 12, height: 12)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(stateWord)
+                Text(session.stateWord)
                     .font(Theme.ui(12, .semibold))
                     .textCase(.uppercase)
                     .kerning(0.6)
                     .foregroundStyle(session.isRecording ? Theme.recording : Theme.secondary)
                     // Said as an ordinary word, not spelled out in capitals.
-                    .accessibilityLabel(stateWord)
+                    .accessibilityLabel(session.stateWord)
                     .accessibilityIdentifier("recorder-state")
                 Text(session.counter)
                     .font(Theme.ui(26, .semibold))
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(Theme.ink)
                     .accessibilityIdentifier("counter")
                     .accessibilityLabel("Recorded \(session.counter)")
@@ -58,61 +61,41 @@ struct MarginLayout: View {
             .accessibilityLabel(session.isRecording ? "Pause recording" : "Resume recording")
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 12)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
-    }
-
-    /// One word for what the recorder is doing.
-    private var stateWord: String {
-        switch session.recorder {
-        case .recording: return "Recording"
-        case .paused: return "Paused"
-        case .interrupted: return "Interrupted"
-        case .stopped: return "Stopped"
-        }
     }
 
     // MARK: - The strip under it
 
     private var strip: some View {
         HStack(spacing: 8) {
-            Button(action: actions.rename) {
+            Button(action: actions.details) {
                 Text(session.participants.isEmpty ? session.page.title : "\(session.page.title) · \(session.participants)")
                     .font(Theme.ui(13, .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
-                    .frame(minHeight: 32)
+                    .truncationMode(.tail)
+                    .frame(minHeight: 44)
             }
             .accessibilityIdentifier("session-title")
-            .accessibilityHint("Renames the session")
+            .accessibilityHint("Changes the title and participants")
             Spacer(minLength: 8)
-            Button(action: actions.toggleLocation) {
-                Label(session.isLocationOn ? "Location on" : "Location off",
-                      systemImage: session.isLocationOn ? "location.fill" : "location.slash")
-                    .font(Theme.ui(13))
-                    .foregroundStyle(Theme.secondary)
-                    .labelStyle(.titleAndIcon)
-                    .frame(minHeight: 32)
-            }
-            .accessibilityIdentifier("location-state")
-            .accessibilityLabel(session.isLocationOn ? "Location on" : "Location off")
-            .accessibilityHint(session.isLocationOn ? "Turns location off" : "Turns location on")
+            LocationButton(session: session, action: actions.toggleLocation)
             if session.isRecording || !session.isFinished {
                 Button("Stop", action: actions.stop)
                     .font(Theme.ui(13, .semibold))
                     .foregroundStyle(Theme.recording)
-                    .frame(minWidth: 44, minHeight: 32)
+                    .frame(minWidth: 44, minHeight: 44)
                     .accessibilityIdentifier("stop")
                     .accessibilityLabel("Stop session")
             } else {
                 Button("Close", action: actions.close)
                     .font(Theme.ui(13, .semibold))
-                    .frame(minWidth: 44, minHeight: 32)
+                    .frame(minWidth: 44, minHeight: 44)
                     .accessibilityIdentifier("close")
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 6)
         .background(Theme.strip)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
     }
@@ -124,7 +107,7 @@ struct MarginLayout: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
                     ForEach(session.rows) { row in
-                        MarginRow(row: row, session: session)
+                        MarginRow(row: row, session: session, onEdit: actions.edit)
                     }
                     noteField
                         .id("note-field")
@@ -136,6 +119,10 @@ struct MarginLayout: View {
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: session.rows.count) {
                 withAnimation { proxy.scrollTo("note-field", anchor: .bottom) }
+            }
+            .onAppear {
+                // A session opened to be read starts where it left off, not at its first line.
+                proxy.scrollTo("note-field", anchor: .bottom)
             }
         }
     }
@@ -149,17 +136,7 @@ struct MarginLayout: View {
                 .frame(width: MarginRow.marginWidth(for: session.style), alignment: .trailing)
                 .padding(.top, 5)
                 .accessibilityHidden(true)
-            TextField("Write a note", text: Binding(get: { session.draft }, set: { session.noteChanged($0) }), axis: .vertical)
-                .font(Theme.note(18))
-                .foregroundStyle(Theme.ink)
-                .lineSpacing(4)
-                .focused($writing)
-                .submitLabel(.return)
-                .onSubmit {
-                    session.noteFinished()
-                    writing = true
-                }
-                .accessibilityIdentifier("note-field")
+            NoteEntry(session: session, focus: focus, size: 18)
         }
     }
 
@@ -173,14 +150,11 @@ struct MarginLayout: View {
                 .opacity(0.4)
                 .accessibilityHint("Video clips come in a later version")
             Spacer(minLength: 0)
-            Button {
-                writing = false
-                actions.hide()
-            } label: {
+            Button(action: actions.hide) {
                 Label("Hide", systemImage: "eye.slash")
                     .font(Theme.ui(17, .semibold))
                     .frame(minWidth: 120, minHeight: 52)
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(Theme.onInk)
                     .background(Theme.ink)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             }
@@ -190,6 +164,27 @@ struct MarginLayout: View {
         .padding(.vertical, 10)
         .background(Theme.paper)
         .overlay(alignment: .top) { Rectangle().fill(Theme.rule).frame(height: 1) }
+    }
+}
+
+/// Whether location is on, in the header of both layouts. Tapping it asks before changing anything.
+struct LocationButton: View {
+    @ObservedObject var session: SessionModel
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(session.isLocationOn ? "Location on" : "Location off",
+                  systemImage: session.isLocationOn ? "location.fill" : "location.slash")
+                .font(Theme.ui(13))
+                .foregroundStyle(Theme.secondary)
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+                .frame(minHeight: 44)
+        }
+        .accessibilityIdentifier("location-state")
+        .accessibilityLabel(session.isLocationOn ? "Location on" : "Location off")
+        .accessibilityHint(session.isLocationOn ? "Turns location off" : "Turns location on")
     }
 }
 

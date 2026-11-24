@@ -7,6 +7,7 @@ import UIKit
 struct MarginRow: View {
     let row: PageRow
     @ObservedObject var session: SessionModel
+    let onEdit: (PageRow) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -43,19 +44,7 @@ struct MarginRow: View {
         case .marker(let text):
             MarkerLine(text: text)
         case .text(let text, let edited):
-            VStack(alignment: .leading, spacing: 2) {
-                Text(text)
-                    .font(Theme.note(18))
-                    .lineSpacing(4)
-                    .foregroundStyle(Theme.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("note")
-                if edited {
-                    Text("edited")
-                        .font(Theme.ui(11))
-                        .foregroundStyle(Theme.secondary)
-                }
-            }
+            NoteText(text: text, edited: edited, size: 18) { onEdit(row) }
         case .photo(let file):
             PhotoThumbnail(url: session.url(for: file), side: 132)
                 .accessibilityElement(children: .ignore)
@@ -71,6 +60,37 @@ struct MarginRow: View {
                 .font(Theme.ui(13))
                 .foregroundStyle(Theme.secondary)
         }
+    }
+}
+
+/// A note on the page. Tapping it opens it for editing.
+struct NoteText: View {
+    let text: String
+    let edited: Bool
+    let size: CGFloat
+    let onEdit: () -> Void
+
+    var body: some View {
+        Button(action: onEdit) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(text)
+                    .font(Theme.note(size))
+                    .lineSpacing(4)
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if edited {
+                    Text("edited")
+                        .font(Theme.ui(11))
+                        .foregroundStyle(Theme.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("note")
+        .accessibilityHint("Opens the note for editing")
     }
 }
 
