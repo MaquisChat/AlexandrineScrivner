@@ -15,12 +15,23 @@ public struct NoteWriter: Sendable {
         text.allSatisfy { $0.isWhitespace }
     }
 
+    private static func isNote(_ id: String, in timeline: SessionTimeline) -> Bool {
+        timeline.manifest.items.contains { item in
+            if case .text(let placement, _, _) = item { return placement.id == id }
+            return false
+        }
+    }
+
     private static func trimmed(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// The text of the note being written is now `text`. Blank space at the ends is kept while writing.
     public mutating func typing(_ text: String, at moment: Moment, in timeline: inout SessionTimeline) throws {
+        // The open note may have been removed by another route (emptied as an older note would be).
+        if let open = openNoteId, !Self.isNote(open, in: timeline) {
+            openNoteId = nil
+        }
         if let open = openNoteId {
             if Self.isBlank(text) {
                 // Everything was deleted: the note goes, and typing again starts a fresh one with a fresh time.
@@ -54,6 +65,8 @@ public struct NoteWriter: Sendable {
     /// The owner changed an older note. Blank text removes it. Otherwise it keeps its time and its
     /// place on the audio, and records when it was changed. Text that is the same as before changes nothing.
     public func revise(id: String, text: String, at moment: Moment, in timeline: inout SessionTimeline) throws {
+        // Only notes can be revised: an id that names a photo or a marker is not found.
+        guard Self.isNote(id, in: timeline) else { throw TimelineError.noSuchItem(id) }
         let tidy = Self.trimmed(text)
         guard !tidy.isEmpty else {
             try timeline.removeItem(id: id)

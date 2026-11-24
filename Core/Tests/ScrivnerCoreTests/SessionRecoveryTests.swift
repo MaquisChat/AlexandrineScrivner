@@ -46,7 +46,9 @@ final class SessionRecoveryTests: XCTestCase {
         let rows = c.page(style: .twentyFourHour).rows
         XCTAssertEqual(rows.map(\.content).suffix(2), [.text("the last thing typed", edited: false),
                                                        .marker("Interrupted (the app was closed unexpectedly) · local time, UTC+5:45")])
-        XCTAssertEqual(c.manifest.items[3].placement.offsetMs, 42_000)     // typed at 44 s; the audio kept is 42 s long
+        let lastNote = c.manifest.items.last { $0.kind == "text" }
+        XCTAssertEqual(lastNote?.placement.offsetMs, 42_000)               // typed at 44 s; the audio kept is 42 s long
+        XCTAssertEqual(rows.last?.time, "10:42")                           // the marker says when it was cut off, not when it was reopened
         XCTAssertEqual(try SessionStore.load(folder), c.manifest)
 
         clock.advance(5); c.resume()
@@ -61,7 +63,7 @@ final class SessionRecoveryTests: XCTestCase {
         try FileManager.default.removeItem(at: folder.url(forRelativePath: "photos/photo-0001.heic"))
         let c = try reopen(folder, audioLength: 60_000)
         XCTAssertEqual(c.notices, [.recovered(dropped: ["photos/photo-0001.heic"])])
-        XCTAssertEqual(c.manifest.items.map(\.kind), ["marker", "text", "text", "marker"])
+        XCTAssertEqual(c.manifest.items.map(\.kind), ["marker", "marker", "text", "text", "marker"])   // started, location off, two notes, interrupted
         c.stop()
         XCTAssertEqual(SessionCheck.folder(c.folder).findings, [])
     }
@@ -78,7 +80,7 @@ final class SessionRecoveryTests: XCTestCase {
         let c = try reopen(folder, audioLength: nil)
         XCTAssertEqual(c.notices, [.recovered(dropped: ["audio/audio-001.m4a"])])
         XCTAssertEqual(c.manifest.spans, [])
-        XCTAssertEqual(c.page(style: .twentyFourHour).rows.map(\.isOnAudio), [false, false, false, false, false])
+        XCTAssertEqual(c.page(style: .twentyFourHour).rows.map(\.isOnAudio), [false, false, false, false, false, false])
         XCTAssertEqual(c.page(style: .twentyFourHour).rows.last?.content,
                        .marker("Interrupted (the app was closed unexpectedly) · local time, UTC+5:45"))
         clock.advance(5); c.resume(); clock.advance(5); c.stop()

@@ -25,7 +25,11 @@ final class FakeAudio: AudioRecording {
     /// What `stop` reports as the file's own length. Nil means "cannot be read".
     var lengthOnStop: Int? = 10_000
 
-    func start(writingTo url: URL) throws {
+    /// How long after being asked the recorder really begins, in seconds. Needs `clock`.
+    var startDelay: Double = 0
+    weak var clock: FakeClock?
+
+    func start(writingTo url: URL) throws -> Moment? {
         if failNextStart {
             failNextStart = false
             throw NoMicrophone()
@@ -33,6 +37,10 @@ final class FakeAudio: AudioRecording {
         try Data("audio".utf8).write(to: url)
         started.append(url)
         isRunning = true
+        guard startDelay > 0, let clock else { return nil }
+        let asked = clock.now()
+        return Moment(host: asked.host + startDelay, wall: asked.wall.adding(milliseconds: Int64(startDelay * 1000)),
+                      utcOffset: asked.utcOffset, timeZone: asked.timeZone)
     }
     func stop() -> Int? {
         isRunning = false

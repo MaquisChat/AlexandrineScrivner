@@ -52,7 +52,7 @@ Inputs the spec implies that are most likely to bite, each pinned by a test in t
   - `mutating func removeItem(id: String) throws`: removes a note, photo, clip or handwriting block. Markers cannot be removed (`TimelineError.cannotRemoveMarker`). Throws `noSuchItem` for an unknown id.
   - `var openSpanId: String? { get }`: the span being recorded, if any.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 func testSetTextDoesNotCountAsALaterEdit()      // addText, setText → text changed, modifiedAt nil; then editText → modifiedAt set
@@ -60,10 +60,10 @@ func testRemoveItem()                           // remove a text and a photo →
 func testOpenSpanId()                           // nil before recording, the span's id while recording, nil after pause
 ```
 
-- [ ] **Step 2: Run; expect a build failure naming `setText`.**
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: `swift test --package-path Core`; all pass.**
-- [ ] **Step 5: Commit.** `feat(core): timeline changes the session controller needs`
+- [x] **Step 2: Run; expect a build failure naming `setText`.**
+- [x] **Step 3: Implement.**
+- [x] **Step 4: `swift test --package-path Core`; all pass.**
+- [x] **Step 5: Commit.** `feat(core): timeline changes the session controller needs`
 
 ---
 
@@ -117,7 +117,7 @@ Marker rows for recording started, resumed, paused, stopped and interrupted carr
 
 Clip notes, joined with `, ` when more than one applies: `still recording` (no `endedBy`); `no sound`; `ended when the app left the screen` (background); `ended when the phone locked` (lock); `ended by an interruption`; `ended when the session stopped` (stop). A clip ended by the owner has no ending note.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 func testClockStyles()                 // 04:57:10.120Z at +05:45 → "10:42" / "10:42 am"; 18:20Z at +05:45 → "00:05" / "12:05 am"; 06:15Z at +05:45 → "12:00" / "12:00 pm"; 13:00Z at -09:30 → "03:30" / "3:30 am"
@@ -134,10 +134,10 @@ func testCrashMarkerWording()          // .interrupted with detail "crash-recove
 
 `notes.md` keeps saying `Interrupted (crash-recovered)` today; this task changes it to the same wording as the page, and the example and `format/` files are regenerated only if their text changes (the example has no crash marker, so they should not).
 
-- [ ] **Step 2: Run; expect `cannot find 'Wording' in scope`.**
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: All tests pass; `(cd format && npm run validate)` still OK.**
-- [ ] **Step 5: Commit.** `feat(core): the page as the screens show it`
+- [x] **Step 2: Run; expect `cannot find 'Wording' in scope`.**
+- [x] **Step 3: Implement.**
+- [x] **Step 4: All tests pass; `(cd format && npm run validate)` still OK.**
+- [x] **Step 5: Commit.** `feat(core): the page as the screens show it`
 
 ---
 
@@ -168,7 +168,7 @@ public struct NoteWriter: Sendable {
 }
 ```
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 func testANoteKeepsTheTimeOfItsFirstCharacter()   // typing("P") at 65 s, typing("P-014 has run") at 70 s, finish → one text, at = t0+65 s, offsetMs 65_000, modifiedAt nil
@@ -180,10 +180,10 @@ func testRevisingAnOlderNote()                    // revise at 500 s → same at
 func testFinishWithNothingOpenDoesNothing()
 ```
 
-- [ ] **Step 2: Run; expect `cannot find 'NoteWriter' in scope`.**
-- [ ] **Step 3: Implement.** While a note is open and its text becomes empty, the note is removed at once and `openNoteId` cleared, so typing again starts a fresh note with a fresh time.
-- [ ] **Step 4: All tests pass.**
-- [ ] **Step 5: Commit.** `feat(core): writing notes`
+- [x] **Step 2: Run; expect `cannot find 'NoteWriter' in scope`.**
+- [x] **Step 3: Implement.** While a note is open and its text becomes empty, the note is removed at once and `openNoteId` cleared, so typing again starts a fresh note with a fresh time.
+- [x] **Step 4: All tests pass.**
+- [x] **Step 5: Commit.** `feat(core): writing notes`
 
 ---
 
@@ -288,7 +288,7 @@ Rules:
 
 `Fakes.swift` holds `FakeClock` (settable host seconds, wall, offset, zone), `FakeAudio` (records the URLs it was started with, writes a few bytes to each, returns a settable length, can be told to throw), `FakeCamera` (writes a few bytes; can be told to throw), `FakeLocation` (settable fix).
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 func testStartingASessionRecordsAtOnce()                 // folder exists; one open span; audio started on audio/audio-001.m4a; first row "Recording started · local time, UTC+5:45"; isRecording
@@ -312,10 +312,10 @@ func testTheCounter()                                    // 10 s recorded and pa
 func testNoMicrophone()                                  // FakeAudio throws on start → session exists, not recording, no span, notice couldNotRecord; resume later works
 ```
 
-- [ ] **Step 2: Run; expect `cannot find 'SessionController' in scope`.**
-- [ ] **Step 3: Implement** `Hardware.swift`, then the controller.
-- [ ] **Step 4: All tests pass.**
-- [ ] **Step 5: Commit.** `feat(core): the session controller`
+- [x] **Step 2: Run; expect `cannot find 'SessionController' in scope`.**
+- [x] **Step 3: Implement** `Hardware.swift`, then the controller.
+- [x] **Step 4: All tests pass.**
+- [x] **Step 5: Commit.** `feat(core): the session controller`
 
 ---
 
@@ -339,7 +339,7 @@ func testNoMicrophone()                                  // FakeAudio throws on 
 **Interfaces:**
 - Consumes: `SessionController.open` (Task 4), `SessionStore.droppingMissingFiles`, `SessionTimeline.recoverAfterCrash`.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 func testReopeningAfterTheAppWasKilled()
@@ -359,10 +359,10 @@ func testOpeningAFolderThatIsNotASession()
 // open on an empty folder throws.
 ```
 
-- [ ] **Step 2: Run; see them fail for the reason each names.**
-- [ ] **Step 3: Implement what is missing in `open`.**
-- [ ] **Step 4: All tests pass.**
-- [ ] **Step 5: Commit.** `feat(core): reopening a session that was cut off`
+- [x] **Step 2: Run; see them fail for the reason each names.**
+- [x] **Step 3: Implement what is missing in `open`.**
+- [x] **Step 4: All tests pass.**
+- [x] **Step 5: Commit.** `feat(core): reopening a session that was cut off`
 
 ---
 
@@ -426,7 +426,7 @@ public enum ReadinessWarning: Equatable, Sendable {
 }
 ```
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```swift
 // SessionListTests
@@ -441,7 +441,48 @@ func testExpiryIsFoundInsideAProfile()          // bytes holding binary junk, th
 func testReadinessWarnings()                    // 1.2 GB free → lowStorage with the text above; 0.15 not charging → lowBattery; 0.15 charging → none; nil readings → none
 ```
 
-- [ ] **Step 2: Run; expect build failures naming the new types.**
-- [ ] **Step 3: Implement.** `ExportRecord` is stored as JSON written with `JSONValue`.
-- [ ] **Step 4: All tests pass on Linux; push and confirm they pass on the hosted Mac too.**
-- [ ] **Step 5: Commit.** `feat(core): session list, export record and warnings`
+- [x] **Step 2: Run; expect build failures naming the new types.**
+- [x] **Step 3: Implement.** `ExportRecord` is stored as JSON written with `JSONValue`.
+- [x] **Step 4: All tests pass on Linux; push and confirm they pass on the hosted Mac too.**
+- [x] **Step 5: Commit.** `feat(core): session list, export record and warnings`
+
+---
+
+## Execution record (2026-11-24)
+
+All six tasks are done on branch `stage-1a`. A fresh reviewer then read the whole branch and found one must-fix and seven should-fix items; all were fixed in one pass, each with a test that failed first. After the fixes: 209 tests pass on Linux, and the same tests pass on a Mac hosted by GitHub.
+
+What the review changed, beyond the "As built" note under Task 4:
+
+- A listed file that has gone is taken off the page, with a notice, when a session is stopped or opened. One missing file can no longer leave a session that cannot be finished.
+- A reopened session keeps the location state its page last recorded; the app's setting can only turn it off. A session started with location off says "Location off" on its page.
+- Photo numbers never go down and are never reused; names already on disk are skipped for photos and audio.
+- A photo that arrives after Stop keeps the session finished.
+- `RecorderState` (recording, paused, interrupted with a reason, stopped). After an interruption the controller keeps trying to record until the owner pauses or stops; `interruptionEnded()` can be called any number of times.
+- The "app was closed unexpectedly" line carries the time of the cut-off.
+- `AudioRecording.start(writingTo:)` returns the moment the audio really began, and the span starts there.
+- New notices: `filesMissing`, `filesNotListed`. Notices carry plain words, never raw error text. `hasUnsavedChanges`.
+
+## What this leaves for stage 1c (the real microphone, camera and location)
+
+From the review. The first group is certain; the second needs settling on the device.
+
+Certain:
+
+- Every `preparePhoto()` must be answered with exactly one `photoSaved` or `photoFailed`, and the controller must outlive photos in flight.
+- The camera must write to a temporary name the workbench would not pick up, and move the file into place when it is complete.
+- When `AudioRecording.stop()` returns, the audio file must be final: closed, with its tags written. The folder may be renamed and the file read through straight afterwards.
+- `Moment.host` must be on the same clock as audio timestamps (`mach_absolute_time`). It stops while the device sleeps, which is harmless, because the device does not sleep while a span is open.
+- iOS does not say why an interruption happened and does not always say when it ended. The adapter gives a general reason, and calls `interruptionEnded()` when the app comes to the front and on a timer while interrupted.
+- Stop recording before storage is completely full, so the file can be finished and `session.json` saved.
+- Backup exclusion and file protection go on the sessions folder, not on files: each save replaces the file.
+- `AudioRecording.start` should return the first sample's moment.
+
+To settle on the device:
+
+- Whether iOS will write Apple's creation-date, make and model keys into an `.m4a`, and whether the creation time it sets itself falls within a second of the span's start. The checker compares both.
+- Whether a place set through AVFoundation's common key lands where the checker expects. The checker now finds a place wherever it lands.
+- Whether iOS puts a Live Photo identifier on ordinary photos.
+- Reading the length of an audio file that was cut off may only be possible asynchronously; `audioLength` is synchronous.
+- The location adapter must keep delivering readings while standing still, or photos after a quiet stretch get no place under the 60-second freshness rule. Freshness uses the wall clock.
+- Reading every file through at Stop on the main thread will take seconds once there is video.

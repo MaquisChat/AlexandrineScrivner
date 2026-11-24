@@ -89,11 +89,12 @@ public enum ReadinessWarning: Equatable, Sendable {
         switch self {
         case .lowStorage(let freeBytes):
             let amount: String
+            // Rounded down, so the figure never reads as more than there is.
             if freeBytes >= 1_000_000_000 {
-                let tenths = Int((Double(freeBytes) / 100_000_000).rounded())
+                let tenths = Int(freeBytes / 100_000_000)
                 amount = "\(tenths / 10).\(tenths % 10) GB"
             } else {
-                amount = "\(Int((Double(freeBytes) / 1_000_000).rounded())) MB"
+                amount = "\(Int(freeBytes / 1_000_000)) MB"
             }
             return "Only \(amount) of storage is free. A long session with video may not fit."
         case .lowBattery(let percent):

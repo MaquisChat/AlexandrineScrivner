@@ -16,6 +16,10 @@ public struct SessionSummary: Equatable, Sendable, Identifiable {
     public let isFinished: Bool
     public let export: ExportState
 
+    /// What tells one row of the list from another. Two copies of the same session's folder have
+    /// the same `id`, so a list uses this.
+    public var listId: String { folder.url.lastPathComponent }
+
     /// Every session under `root`, newest first. A folder whose `session.json` cannot be read is
     /// named in `unreadable`, never dropped silently: its recordings are still there.
     public static func list(in root: URL, exports: ExportRecord) -> (sessions: [SessionSummary], unreadable: [String]) {

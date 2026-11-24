@@ -78,10 +78,11 @@ final class SessionControllerTests: XCTestCase {
     }
     func testInterruptionClosesTheSpanAndResumeOpensANewOne() throws {
         let c = try start()
-        clock.advance(30); audio.lengthOnStop = 30_000
+        clock.advance(30); audio.lengthOnStop = 29_500              // the audio's own length, not the clock's
         c.interruptionBegan(reason: "phone call")
         XCTAssertFalse(c.isRecording)
         XCTAssertEqual(c.manifest.spans[0].endedBy, .interruption)
+        XCTAssertEqual(c.manifest.spans[0].durationMs, 29_500)
         XCTAssertEqual(rows(c).last?.content, .marker("Interrupted (phone call) · local time, UTC+5:45"))
         clock.advance(20); c.typing("she took a call"); c.finishNote()
         XCTAssertEqual(rows(c).last?.isOnAudio, false)
