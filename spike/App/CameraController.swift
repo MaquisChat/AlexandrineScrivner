@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import Foundation
 import SpikeKit
 
@@ -37,6 +38,13 @@ final class CameraController: NSObject, ObservableObject {
     private var photoSavers: [Int64: PhotoSaver] = [:]
 
     func open(log: EventLog) {
+        if self.log !== log {
+            // A new run: its clips and photos are numbered from 1 again.
+            queue.async {
+                self.clipCount = 0
+                self.photoCount = 0
+            }
+        }
         self.log = log
         log.record("camera-open")
         AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
@@ -54,14 +62,16 @@ final class CameraController: NSObject, ObservableObject {
         }
     }
 
+    /// Call on the main thread. Calling it twice does nothing the second time.
     func close() {
+        guard isOpen else { return }
+        isOpen = false
         log?.record("camera-close")
         queue.async {
             if self.movieOutput.isRecording {
                 self.movieOutput.stopRecording()
             }
             self.session.stopRunning()
-            DispatchQueue.main.async { self.isOpen = false }
         }
     }
 
@@ -189,6 +199,7 @@ final class CameraController: NSObject, ObservableObject {
         case .videoDeviceInUseByAnotherClient: return "video-device-in-use-by-another-client"
         case .videoDeviceNotAvailableWithMultipleForegroundApps: return "video-device-not-available-with-multiple-foreground-apps"
         case .videoDeviceNotAvailableDueToSystemPressure: return "video-device-not-available-due-to-system-pressure"
+        case .sensitiveContentMitigationActivated: return "sensitive-content-mitigation-activated"
         @unknown default: return "unknown-\(raw)"
         }
     }

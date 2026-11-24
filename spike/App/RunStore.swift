@@ -65,8 +65,13 @@ enum RunStore {
             .map { RunFolder(url: $0) }
     }
 
+    private static let appendLock = NSLock()
+
     /// Appends the line and a newline. Each call opens and closes the file, so a crash loses at most one line.
+    /// Events arrive from several threads at once, so appends take turns.
     static func appendLine(_ line: String, to url: URL) {
+        appendLock.lock()
+        defer { appendLock.unlock() }
         let data = Data((line + "\n").utf8)
         if let handle = try? FileHandle(forWritingTo: url) {
             defer { try? handle.close() }

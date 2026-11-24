@@ -1,3 +1,4 @@
+import Combine
 import PencilKit
 import SwiftUI
 import UIKit
@@ -168,12 +169,17 @@ struct StylusProbeView: View {
                 DrawingArea(pencilOnly: pencilOnly, clearCount: clearCount)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                Picker("Does the stylus draw in Pencil only mode?", selection: $drawsInPencilOnly) {
+                // Outside a form a picker hides its title, so each question is shown as text above it.
+                Text("Does the stylus draw in Pencil only mode?")
+                Picker("Answer", selection: $drawsInPencilOnly) {
                     ForEach(Answer.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
-                Picker("Does a resting hand leave marks in Any input mode?", selection: $palmLeavesMarks) {
+                .pickerStyle(.segmented)
+                Text("Does a resting hand leave marks in Any input mode?")
+                Picker("Answer", selection: $palmLeavesMarks) {
                     ForEach(Answer.allCases, id: \.self) { Text($0.title).tag($0) }
                 }
+                .pickerStyle(.segmented)
 
                 HStack {
                     Button("Save stylus report") { save() }

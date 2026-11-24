@@ -41,7 +41,14 @@ enum ClipMuxer {
 
         let audioStart = CMTime(seconds: audioStartSeconds, preferredTimescale: 48_000)
         let audioLength = CMTime(seconds: durationSeconds, preferredTimescale: 48_000)
-        try audioOut.insertTimeRange(CMTimeRange(start: audioStart, duration: audioLength), of: audioTrack, at: .zero)
+        let wanted = CMTimeRange(start: audioStart, duration: audioLength)
+        // While the session audio is still being written, the file may not yet reach the clip's end.
+        // Inserting a range past what is readable would give a clip whose sound is cut off, silently.
+        let readable = try await audioTrack.load(.timeRange)
+        guard readable.containsTimeRange(wanted) else {
+            throw ClipMuxError.cannotBuild("read the session audio as far as the clip's end")
+        }
+        try audioOut.insertTimeRange(wanted, of: audioTrack, at: .zero)
 
         try? FileManager.default.removeItem(at: output)
         guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {

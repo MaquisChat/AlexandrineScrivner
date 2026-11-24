@@ -19,7 +19,6 @@ struct ReportsView: View {
                 ReportDetailView(run: run)
             }
             .onAppear { runs = RunStore.all() }
-            .refreshable { runs = RunStore.all() }
         }
     }
 }

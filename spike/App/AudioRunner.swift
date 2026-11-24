@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import Foundation
 import SpikeKit
 import UIKit
@@ -57,12 +58,12 @@ final class AudioRunner: ObservableObject {
         let format = engine.inputNode.outputFormat(forBus: 0)
         let newFile = try AVAudioFile(forWriting: run.audio, settings: format.settings)
 
-        stateLock.lock()
-        self.file = newFile
-        self.run = run
-        self.framesWritten = 0
-        self.writeFailed = false
-        stateLock.unlock()
+        stateLock.withLock {
+            self.file = newFile
+            self.run = run
+            self.framesWritten = 0
+            self.writeFailed = false
+        }
         self.sampleRate = format.sampleRate
         self.log = log
         self.wantsRunning = true
@@ -76,10 +77,10 @@ final class AudioRunner: ObservableObject {
             wantsRunning = false
             engine.inputNode.removeTap(onBus: 0)
             removeObservers()
-            stateLock.lock()
-            self.file = nil
-            self.run = nil
-            stateLock.unlock()
+            stateLock.withLock {
+                self.file = nil
+                self.run = nil
+            }
             throw error
         }
         log.record("audio-start", "rate=\(Int(format.sampleRate)) channels=\(format.channelCount)")
@@ -161,11 +162,19 @@ final class AudioRunner: ObservableObject {
     private func restartEngine() {
         guard wantsRunning else { return }
         do {
-            try AVAudioSession.sharedInstance().setActive(true)
+            // After a media-services reset the category is gone too, so set it again.
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.record, mode: .default, options: [])
+            try session.setActive(true)
             if !engine.isRunning {
                 let input = engine.inputNode
                 input.removeTap(onBus: 0)
                 let format = input.outputFormat(forBus: 0)
+                // Installing a tap with an empty format raises an exception that cannot be caught.
+                guard format.sampleRate > 0, format.channelCount > 0 else {
+                    log?.record("engine-restart-failed", "no input format")
+                    return
+                }
                 installTap(format: format)
                 engine.prepare()
                 try engine.start()

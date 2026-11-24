@@ -12,12 +12,14 @@ struct AudioTestView: View {
     @State private var run: RunFolder?
     @State private var message: String?
     @State private var failWrites = false
+    @State private var starting = false
     @State private var finishing = false
 
     @State private var cameraOn = false
     @State private var quietShutter = false
     @State private var clipSound: ClipSound = .muxAfter
     @State private var waitingClips: [FinishedClip] = []
+    @State private var soundTasks: [Task<Void, Never>] = []
 
     private let labels = (1...12).map { "R\($0)" }
     private let micOffMessage = "Microphone access is off. Turn it on in Settings, Privacy & Security, Microphone."
@@ -47,7 +49,7 @@ struct AudioTestView: View {
                         Button("Stop", role: .destructive) { audio.stop() }
                     } else {
                         Button("Start") { Task { await start() } }
-                            .disabled(finishing)
+                            .disabled(finishing || starting)
                     }
                     if finishing {
                         Text("Finishing the run…").foregroundStyle(.secondary)
@@ -109,6 +111,9 @@ struct AudioTestView: View {
     // MARK: - Starting and finishing
 
     private func start() async {
+        guard !starting else { return }     // a double tap must not create two runs
+        starting = true
+        defer { starting = false }
         message = nil
         guard await AudioRunner.micAllowed() else {
             message = micOffMessage
@@ -121,6 +126,7 @@ struct AudioTestView: View {
             audio.failWritesAfterSeconds = failWrites ? 10 : nil
             try await audio.start(in: newRun)
             waitingClips = []
+            soundTasks = []
             run = newRun
         } catch MicError.denied {
             if let created { try? FileManager.default.removeItem(at: created.url) }
@@ -151,6 +157,13 @@ struct AudioTestView: View {
         // Give the last clip's callback a moment to arrive.
         try? await Task.sleep(nanoseconds: 300_000_000)
 
+        // Let any attempt that began during the run finish, so its event lands before the report.
+        let pending = soundTasks
+        soundTasks = []
+        for task in pending {
+            await task.value
+        }
+
         // The audio file is closed now: add sound to any clip that could not get it during the run.
         let clips = waitingClips
         waitingClips = []
@@ -171,7 +184,7 @@ struct AudioTestView: View {
     private func clipFinished(url: URL, start: Double, duration: Double, sound: ClipSound) {
         guard sound == .muxAfter, let current = run else { return }
         let clip = FinishedClip(url: url, startHostSeconds: start, durationSeconds: duration)
-        Task {
+        let task = Task {
             if audio.isRunning {
                 // First try while the session audio is still being written.
                 let added = await addSound(to: clip, in: current, when: "during-run")
@@ -180,6 +193,7 @@ struct AudioTestView: View {
                 waitingClips.append(clip)
             }
         }
+        soundTasks.append(task)
     }
 
     /// Returns true when the clip needs no further attempt.
@@ -191,11 +205,18 @@ struct AudioTestView: View {
             audio.log?.record("clip-mux-skipped", "no-audio-at-clip-start")
             return true
         }
+        // A clip that was still recording when the run stopped is longer than the audio that exists.
+        let recorded = Double(buffers.reduce(0) { $0 + $1.frames }) / audio.sampleRate
+        let length = min(clip.durationSeconds, recorded - position)
+        guard length > 0 else {
+            audio.log?.record("clip-mux-skipped", "no-audio-after-clip-start")
+            return true
+        }
         let name = clip.url.deletingPathExtension().lastPathComponent + "-muxed.mov"
         let output = clip.url.deletingLastPathComponent().appendingPathComponent(name)
         do {
             try await ClipMuxer.mux(clip: clip.url, sessionAudio: run.audio, audioStartSeconds: position,
-                                    durationSeconds: clip.durationSeconds, output: output)
+                                    durationSeconds: length, output: output)
             audio.log?.record("clip-muxed", String(format: "audio-start=%.3f", position) + " when=\(when)")
             return true
         } catch {
