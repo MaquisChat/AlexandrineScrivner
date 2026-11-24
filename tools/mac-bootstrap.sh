@@ -8,9 +8,9 @@
 set -euo pipefail
 
 XCODEGEN_VERSION="2.46.0"
-# SHA-256 of xcodegen.zip for the version above. Empty until the first download on the Mac,
-# which prints the value to record here. Once set, every later download is verified against it.
-XCODEGEN_SHA256=""
+# SHA-256 of xcodegen.zip for the version above. Every download is verified against it.
+# When changing the version, empty this; the next download prints the value to record here.
+XCODEGEN_SHA256="4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
 
 MIN_MACOS="26.6"
 MIN_XCODE="27"
@@ -50,6 +50,9 @@ done
 
 # 1. macOS
 command -v sw_vers >/dev/null 2>&1 || fail "This script has to run on a Mac."
+# shellcheck source=tools/mac-lib.sh
+. tools/mac-lib.sh
+use_installed_xcode
 macos_version="$(sw_vers -productVersion)"
 version_at_least "$macos_version" "$MIN_MACOS" \
   || fail "macOS $macos_version is too old. Update to macOS Tahoe $MIN_MACOS or later in System Settings, General, Software Update."
@@ -79,7 +82,7 @@ if [ ! -x "$xcodegen" ]; then
     echo "NOTE: XcodeGen $XCODEGEN_VERSION downloaded. Record this in XCODEGEN_SHA256 at the top of tools/mac-bootstrap.sh:"
     echo "NOTE:   $sum"
   fi
-  unzip -q -o "$zip" -d .tools
+  unzip -q -o "$zip" -d .tools || fail "The XcodeGen download could not be unpacked. Delete the .tools folder and try again."
   [ -x "$xcodegen" ] || fail "XcodeGen was downloaded but its program was not found at $xcodegen."
 fi
 
@@ -87,7 +90,7 @@ fi
 local_config="spike/Local.xcconfig"
 if [ ! -f "$local_config" ]; then
   mkdir -p spike
-  suffix="$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')"
+  suffix="$(od -An -N4 -tx1 /dev/urandom | tr -dc '0-9a-f')"
   {
     echo "// Local settings for this Mac. Not committed."
     echo "DEVELOPMENT_TEAM ="

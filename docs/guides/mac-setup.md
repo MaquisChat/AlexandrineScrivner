@@ -29,31 +29,35 @@ The free account is enough. You do not need to pay for the developer programme.
 
 ## 4. Prepare the iPhone and the iPad
 
-Do this for the iPhone, then again for the iPad.
+Do this for the iPhone, then again for the iPad. Xcode has to see the device before the device offers Developer Mode, so open Xcode first.
 
-1. Connect the device to the Mac with a cable.
-2. On the device, tap **Trust** when it asks whether to trust this computer.
-3. On the device, open **Settings**, then **Privacy & Security**, then **Developer Mode**. Turn it on. The device restarts.
-4. After the restart, confirm that you want Developer Mode on.
-
-If you cannot see Developer Mode, open Xcode on the Mac with the device still connected, wait a minute, and look again.
+1. Open Xcode on the Mac and leave it open.
+2. Connect the device to the Mac with a cable and unlock it.
+3. On the device, tap **Trust** when it asks whether to trust this computer.
+4. Wait a minute. Then on the device, open **Settings**, then **Privacy & Security**, then **Developer Mode**. Turn it on. The device restarts.
+5. After the restart, confirm that you want Developer Mode on.
 
 ## 5. Open the project in Claude on the Mac
 
 The builds have to run on your Mac, so Claude needs to be working there.
 
-1. Open the Claude app on the Mac and start a session in the folder that holds this project.
-2. Ask Claude to carry on with the plan in `docs/superpowers/plans/`.
+1. Open the Claude app on the Mac and start a Claude Code session.
+2. Ask Claude to download this project from GitHub (`MaquisChat/AlexandrineScrivner`) into a folder on the Mac and to switch to the branch named `stage-0-spike`.
+3. Ask Claude to carry on with the plan in `docs/superpowers/plans/`.
 
-From here Claude runs the builds. The remaining steps are things it will ask you to do at the right moment.
+From here Claude runs the builds. The remaining sections are things it will ask you to do at the right moment. Section 8 comes up first, then section 6, then section 7.
+
+The first time the app is built for a device, the Mac asks for your Mac login password so the build can use your signing certificate. Enter it and choose **Always Allow**.
 
 ## 6. The first time an app is installed
 
-The first time the test app lands on a device, the device will refuse to open it until you say you trust it.
+The first time the test app lands on a device, the device will refuse to open it until you say you trust it. Claude's install will say "The app is installed but could not be opened". That is expected the first time.
 
-1. On the device, open **Settings**, then **General**, then **VPN & Device Management**.
-2. Under **Developer App**, tap your Apple account.
-3. Tap **Trust**.
+1. Make sure the device is connected to the internet.
+2. On the device, open **Settings**, then **General**, then **VPN & Device Management**.
+3. Under **Developer App**, tap your Apple account.
+4. Tap **Trust**.
+5. Tell Claude it is done, so it can run the install again.
 
 You do this once for each device.
 
@@ -67,7 +71,7 @@ Plan your test runs so they all happen within seven days of an install.
 
 ## 8. Choosing the signing team (once)
 
-Claude will ask you to do this when the project is first ready.
+Claude will ask you to do this when the project is first ready, before anything is installed on a device.
 
 1. Open `spike/Spike.xcodeproj` in Xcode.
 2. In the left-hand list, click the blue **Spike** item at the top, then select **Spike** under Targets.

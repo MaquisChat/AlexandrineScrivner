@@ -12,6 +12,7 @@ targets:
   Spike:
     type: application
     platform: iOS
+    scheme: {}
     sources: [App]
     dependencies:
       - package: SpikeKit

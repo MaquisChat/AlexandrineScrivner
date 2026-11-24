@@ -39,6 +39,33 @@ Failure modes the spec implies that are most likely to bite, each pinned by a te
 
 ---
 
+## Execution status (2026-11-24)
+
+Worked so far in a cloud session on Linux. **Nothing has run on the Mac or on a device yet.** Ticked steps below are done; unticked steps need the Mac, the devices or the owner.
+
+- **Tasks 2 and 3 are complete.** SpikeKit's 16 tests were watched failing, then passing, with Swift 6.4.3 on Linux. `tools/mac-build.sh` runs them again on the Mac.
+- **Tasks 1, 4, 5, 6, 7 and 8 are written and committed but not verified.** The app code under `spike/App/` has never been compiled against Apple's SDKs. It passes a syntax check, and it type-checks against hand-written stand-ins for Apple's modules, which proves the Swift is consistent but not that every Apple API is spelled as the real SDK spells it. Expect to fix compile errors at Task 4 step 6.
+- **The scripts were exercised with stand-in commands** (version checks, signing-team capture, device selection, log scrubbing, the XcodeGen download and checksum). Not confirmed on a Mac: every `xcrun devicectl` call, and in particular whether `device copy from` copies a whole folder (`tools/mac-fetch-results.sh` says so at the top).
+- **Task 9 has not started.** It is written from the device results.
+- Two independent reviews of the unverified code were done and their findings fixed (commits "review fixes").
+
+**To resume on the Mac:** do Task 1 steps 7 and 8, then continue from the first unticked step of each task in order.
+
+**Decisions taken while executing, where they differ from the text below:**
+
+1. `tools/mac-lib.sh` was added: shared device lookup (`find_device`), a `scrub` filter that removes identifiers, names, the signing team and the home folder from everything the scripts print or log, and `use_installed_xcode`.
+2. XcodeGen is pinned to 2.46.0 with its checksum recorded. Its support for Xcode 27 projects is not confirmed; raise the version on the Mac if generation fails.
+3. `spike/project.yml` has `scheme: {}` so that `xcodebuild -scheme Spike` has a scheme to find. `.gitignore` also ignores `.swiftpm/` and `xcuserdata/`.
+4. `RunStore.deviceLine` works out "iOS" or "iPadOS" from the hardware model and takes the version from `ProcessInfo`, not `UIDevice`.
+5. `AudioRunner.micAllowed()` was added; the view asks it before creating a run folder, so a refusal creates nothing.
+6. The report is written when recording ends for any reason, not only from the Stop button, and only after any clip-sound attempt has finished.
+7. Clip sound is added in two attempts: straight after the clip (`clip-muxed … when=during-run`, or `clip-mux-early-failed`) and again after the run stops (`when=after-stop`, or `clip-mux-failed`). Whether the session audio can be read while it is still being written is itself a finding for the audio decision in Task 9.
+8. The camera asks for camera permission when opened, and its clip and photo numbers restart with each run.
+9. Launch recovery also writes the report for a run that finished cleanly but was closed before its report was written.
+10. `tools/mac-install.sh` reports "installed but could not be opened" with what to do, since the first launch fails until the owner trusts the developer app on the device.
+
+---
+
 ## File Structure
 
 ```
@@ -92,6 +119,8 @@ spike/                            (deleted in Task 9)
 ```
 .DS_Store
 .build/
+.swiftpm/
+xcuserdata/
 .tools/
 build/
 spike/Spike.xcodeproj/
@@ -535,6 +564,7 @@ targets:
   Spike:
     type: application
     platform: iOS
+    scheme: {}
     sources: [App]
     dependencies:
       - package: SpikeKit
