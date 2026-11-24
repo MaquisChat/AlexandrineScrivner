@@ -88,6 +88,15 @@ final class WalkthroughTests: XCTestCase {
         return false
     }
 
+    /// The note field should have the keyboard already. If it has not, that is a failure, and the
+    /// field is tapped so that the rest of the walk still means something.
+    private func expectKeyboard(_ why: String) {
+        if !noteFieldTakesKeyboard() {
+            XCTFail(why)
+            element("note-field").tap()
+        }
+    }
+
     private func launch() {
         app.launch()
         XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 120), "the list did not appear")
@@ -208,10 +217,7 @@ final class WalkthroughTests: XCTestCase {
         // Two notes typed straight off, Return between them, without touching the screen.
         let field = element("note-field")
         XCTAssertTrue(field.waitForExistence(timeout: 30))
-        if !noteFieldTakesKeyboard() {
-            XCTFail("a new session opens ready to be typed into")
-            field.tap()
-        }
+        expectKeyboard("a new session opens ready to be typed into")
         app.typeText("Stall since 2009.\nPrices by hand.\n")
         XCTAssertTrue(note("Prices by hand").waitForExistence(timeout: 30))
         XCTAssertEqual(all("note", startingWith: "Stall since 2009").count, 1, "each note is on the page once")
@@ -287,7 +293,7 @@ final class WalkthroughTests: XCTestCase {
         XCTAssertTrue(note("Off the record").waitForExistence(timeout: 30))
         XCTAssertEqual(recorderState, "recording")
         XCTAssertEqual(element("location-state").label, "Location off", "the plain layout says whether location is on")
-        XCTAssertTrue(noteFieldTakesKeyboard(), "switching layout while writing keeps the keyboard")
+        expectKeyboard("switching layout while writing keeps the keyboard")
         shot("plain-layout")
 
         // Hide while half way through a note.
@@ -305,7 +311,7 @@ final class WalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["hide"].waitForExistence(timeout: 15))
         XCTAssertFalse(element("cover").exists)
         XCTAssertEqual(element("note-field").value as? String, "Half a thought", "the half-typed note is still there")
-        XCTAssertTrue(noteFieldTakesKeyboard(), "coming back from the cover carries on where the writing was")
+        expectKeyboard("coming back from the cover carries on where the writing was")
         app.typeText(", finished.")
         XCTAssertEqual(element("note-field").value as? String, "Half a thought, finished.")
 
