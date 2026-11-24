@@ -19,4 +19,6 @@ tools/mac-check-session.sh ~/Desktop/Sessions
 
 Whether the workbench can take in what the recorder writes is tested by running the workbench's own import code over the worked example. The latest result is in `docs/compatibility/workbench-check.md`.
 
+`App/` is the notebook app itself. In this stage it has every screen, but its microphone and camera are stand-ins: it writes a silent recording and a drawn picture where the real ones will go. That lets the whole app be built, walked through and photographed automatically in an iPhone simulator on every push (`tools/mac-walkthrough.sh`), before the real microphone and camera are wired in.
+
 Building the app needs a Mac. The one-time setup is described in plain language in `docs/guides/mac-setup.md`.

@@ -93,3 +93,15 @@ The checker reads each session and prints, in plain sentences, anything that is 
 One thing the checker cannot fix: until the research workbench itself is corrected, it shows the time of an imported **audio** recording wrong by your time-zone offset (photos and clips are right). The recording and the session's own record are not affected. The details and the fix are in `docs/compatibility/workbench-check.md`.
 
 The first run fetches ExifTool, the program that reads the tags inside media files, into the project's `.tools` folder. It is the same build the workbench uses.
+
+## 10. Putting the notebook app on the iPhone
+
+The notebook app can be installed the same way as the test app, with one more word:
+
+```bash
+tools/mac-install.sh iphone app
+```
+
+What to expect from this version: every screen is there (the session list, the page in both layouts, the hide button, settings, sharing and deleting), and it writes real session folders. Its microphone and camera are still stand-ins. A session's recording is silence of the right length, and a photo is a drawn picture that says "Stand-in photo". The real microphone and camera come once the test app's runs (step 6 onwards) have shown which way of recording holds up on your phone.
+
+It is worth installing anyway, to see whether the page, the two layouts and the hide button feel right in the hand.
