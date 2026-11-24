@@ -13,12 +13,19 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch replaces a run that is still waiting for a machine.
+concurrency:
+  group: mac-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mac-build:
     strategy:
       fail-fast: false
       matrix:
-        machine: [macos-latest, macos-15-intel]
+        # GitHub's Apple-silicon Macs (macos-latest) were too short of capacity to start a job
+        # on 2026-11-24; the Intel ones start within minutes. Add macos-latest back when that eases.
+        machine: [macos-15-intel]
     runs-on: ${{ matrix.machine }}
     timeout-minutes: 45
     steps:
