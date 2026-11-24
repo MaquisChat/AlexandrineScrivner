@@ -93,10 +93,21 @@ public struct Instant: Hashable, Comparable, Sendable {
               let year = number(0..<4), let month = number(5..<7), let day = number(8..<10),
               let hour = number(11..<13), let minute = number(14..<16), let second = number(17..<19),
               let millisecond = number(20..<23),
-              (1...12).contains(month), day >= 1, day <= daysInMonth(year: year, month: month),
-              hour <= 23, minute <= 59, second <= 59 else { return nil }
-        let days = daysFromCivil(year: year, month: month, day: day)
-        self.millisecondsSince1970 = days * 86_400_000 + hour * 3_600_000 + minute * 60_000 + second * 1000 + millisecond
+              let instant = Instant(year: Int(year), month: Int(month), day: Int(day), hour: Int(hour),
+                                    minute: Int(minute), second: Int(second), millisecond: Int(millisecond))
+        else { return nil }
+        self = instant
+    }
+
+    /// The fields read as UTC. Nil when they do not name a real date and time.
+    public init?(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int, millisecond: Int) {
+        guard (0...9999).contains(year), (1...12).contains(month),
+              day >= 1, Int64(day) <= daysInMonth(year: Int64(year), month: Int64(month)),
+              (0...23).contains(hour), (0...59).contains(minute), (0...59).contains(second),
+              (0...999).contains(millisecond) else { return nil }
+        let days = daysFromCivil(year: Int64(year), month: Int64(month), day: Int64(day))
+        self.millisecondsSince1970 = days * 86_400_000 + Int64(hour) * 3_600_000 + Int64(minute) * 60_000
+            + Int64(second) * 1000 + Int64(millisecond)
     }
 
     public var iso: String {
