@@ -214,7 +214,39 @@ public struct SessionTimeline: Sendable {
         openSpanHostStart = nil
         openClipHostStarts.removeAll()
         needsRecovery = false
-        manifest.items.append(.marker(place(at: moment), type: .interrupted, detail: "crash-recovered"))
+        addCrashMarker()
+    }
+
+    /// Notes on the page that the app was closed unexpectedly, stamped with the last moment the
+    /// session is known to have been alive (its last item, or the end of the audio that was kept),
+    /// not with the time it happened to be opened again.
+    public mutating func addCrashMarker() {
+        var lastKnown = manifest.createdAt
+        var offset = manifest.utcOffset
+        for item in manifest.items where item.placement.at > lastKnown {
+            lastKnown = item.placement.at
+            offset = item.placement.utcOffset
+        }
+        for span in manifest.spans {
+            let end = span.startedAt.adding(milliseconds: Int64(span.durationMs ?? 0))
+            if end > lastKnown {
+                lastKnown = end
+                offset = span.utcOffset
+            }
+        }
+        let placement = Placement(id: ids.next(at: lastKnown), at: lastKnown, utcOffset: offset, spanId: nil, offsetMs: nil)
+        manifest.items.append(.marker(placement, type: .interrupted, detail: "crash-recovered"))
+    }
+
+    /// Takes on a repaired copy of this session's manifest: the same session with things removed
+    /// whose files are gone. Only while nothing is being recorded.
+    public mutating func adopt(repaired: Manifest) throws {
+        guard !needsRecovery else { throw TimelineError.needsRecovery }
+        guard !isRecording else { throw TimelineError.alreadyRecording }
+        guard repaired.id == manifest.id else { throw TimelineError.noSuchItem(repaired.id) }
+        manifest = repaired
+        let kept = Set(repaired.spans.map(\.id))
+        spanHostRanges.removeAll { !kept.contains($0.spanId) }
     }
 
     // MARK: - Items

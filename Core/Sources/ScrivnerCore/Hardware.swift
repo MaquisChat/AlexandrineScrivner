@@ -11,7 +11,12 @@ public protocol SessionClock: AnyObject {
 /// The microphone, writing one audio file at a time.
 public protocol AudioRecording: AnyObject {
     /// Starts writing a new audio file. Throws if the microphone cannot be had.
-    func start(writingTo url: URL) throws
+    ///
+    /// Returns the moment the first sound in the file was captured, on the same clocks as
+    /// `SessionClock`, so that positions on the audio are counted from where the audio really
+    /// begins and not from when it was asked for. Nil if the recorder cannot say; the moment the
+    /// call returned is then used.
+    func start(writingTo url: URL) throws -> Moment?
     /// Stops and returns the finished file's own length in milliseconds, or nil if it cannot be read.
     func stop() -> Int?
 }

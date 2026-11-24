@@ -121,6 +121,27 @@ public enum SessionStore {
         return sums
     }
 
+    /// The next unused file name of a kind, counting what the manifest lists and also what is
+    /// already in the folder. A file can be on disk without being listed (written just before the
+    /// app was closed); its name must not be handed out again, or it would be overwritten.
+    public static func nextFile(_ kind: MediaKind, ext: String, in manifest: Manifest, onDiskIn folder: SessionFolder) -> String {
+        let listed = nextFile(kind, ext: ext, in: manifest)
+        guard let slash = listed.firstIndex(of: "/"), let dot = listed.lastIndex(of: ".") else { return listed }
+        let subfolder = String(listed[..<slash])
+        let stem = listed[listed.index(after: slash)..<dot]                 // "photo-0007"
+        guard let dash = stem.lastIndex(of: "-") else { return listed }
+        let prefix = String(stem[...dash])                                  // "photo-"
+        let digits = stem.distance(from: stem.index(after: dash), to: stem.endIndex)
+        var highest = (Int(stem[stem.index(after: dash)...]) ?? 1) - 1
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.url.appendingPathComponent(subfolder).path)) ?? []
+        for name in names where name.hasPrefix(prefix) {
+            let number = name.dropFirst(prefix.count).prefix { $0.isASCII && $0.isNumber }
+            if let value = Int(number) { highest = max(highest, value) }
+        }
+        let next = String(highest + 1)
+        return "\(subfolder)/\(prefix)" + String(repeating: "0", count: max(0, digits - next.count)) + next + ".\(ext)"
+    }
+
     /// Hashes every listed file, checks the session is complete and consistent, saves it and
     /// returns it. A listed file that is not on disk, or any inconsistency, is an error.
     public static func finalize(_ manifest: Manifest, in folder: SessionFolder) throws -> Manifest {
