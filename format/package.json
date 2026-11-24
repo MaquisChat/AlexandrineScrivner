@@ -1,0 +1,12 @@
+{
+  "name": "field-session-format-checks",
+  "private": true,
+  "type": "module",
+  "description": "Checks the worked example against the session.json schema, and that broken samples are rejected.",
+  "scripts": {
+    "validate": "node validate.mjs"
+  },
+  "dependencies": {
+    "ajv": "8.17.1"
+  }
+}

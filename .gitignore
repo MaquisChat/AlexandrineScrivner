@@ -11,3 +11,4 @@ docs/spike/results/**/*.caf
 docs/spike/results/**/*.mov
 docs/spike/results/**/*.heic
 docs/spike/results/**/*.jsonl
+node_modules/

@@ -1,0 +1,180 @@
+{
+  "format": "ao-field-session",
+  "version": 1,
+  "id": "01a207ff-bc48-7d23-b8bc-927ded35455d",
+  "title": "Market visit",
+  "createdAt": "2026-11-23T10:42:10.120Z",
+  "utcOffset": "+00:00",
+  "timeZone": "Europe/Lisbon",
+  "participants": [
+    "P-014"
+  ],
+  "device": {
+    "model": "iPhone18,1",
+    "os": "iOS 27.1",
+    "app": "0.1.0"
+  },
+  "startLocation": {
+    "lat": 91,
+    "lon": -9.1393,
+    "alt": 12.0,
+    "accuracyM": 5.0
+  },
+  "spans": [
+    {
+      "id": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "file": "audio/audio-001.m4a",
+      "sha256": "3f374f00266b2b3709b879b14ced9931abf3b1cbbe97db369e082fa93f2a8def",
+      "startedAt": "2026-11-23T10:42:10.120Z",
+      "utcOffset": "+00:00",
+      "timeZone": "Europe/Lisbon",
+      "durationMs": 551000,
+      "endedBy": "pause"
+    },
+    {
+      "id": "01a2080a-6aa8-7841-b14d-557d89349eb9",
+      "file": "audio/audio-002.m4a",
+      "sha256": "03cb5357c87a7b4c5e6da10575d312a49ff1b14921dd161362041fea466d8623",
+      "startedAt": "2026-11-23T10:53:50.120Z",
+      "utcOffset": "+00:00",
+      "timeZone": "Europe/Lisbon",
+      "durationMs": 100000,
+      "endedBy": "stop"
+    }
+  ],
+  "items": [
+    {
+      "id": "01a207ff-bc48-7f49-b9f5-a07176645a03",
+      "kind": "marker",
+      "type": "recording-started",
+      "at": "2026-11-23T10:42:10.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 0
+    },
+    {
+      "id": "01a20800-ba30-79ae-8df6-c4e563d8e22d",
+      "kind": "text",
+      "at": "2026-11-23T10:43:15.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 65000,
+      "text": "P-014 has run the stall since 2009. Took it over from her aunt, who still does the early shift on Saturdays."
+    },
+    {
+      "id": "01a20802-8ef0-72f4-bae5-78fd14e84742",
+      "kind": "photo",
+      "at": "2026-11-23T10:45:15.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 185000,
+      "file": "photos/photo-0001.heic",
+      "sha256": "78964427e545af953bfeae542661007fc877bae8ac7b2d0e3e9d30991793bc76",
+      "gps": {
+        "lat": 38.7223,
+        "lon": -9.1393,
+        "alt": 12.0,
+        "accuracyM": 5.0
+      }
+    },
+    {
+      "id": "01a20803-36e8-736d-a6e0-d6dede7fa7e0",
+      "kind": "text",
+      "at": "2026-11-23T10:45:58.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 228000,
+      "text": "Prices are handwritten every morning. Says the card reader \"scares off the regulars\"."
+    },
+    {
+      "id": "01a20806-4bf8-7b18-87db-765408e69765",
+      "kind": "video",
+      "at": "2026-11-23T10:49:20.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 430000,
+      "durationMs": 48000,
+      "endedBy": "user",
+      "sound": true,
+      "file": "video/clip-0001.mov",
+      "sha256": "0584bcbb0790d2ef317543acc9eec72c2a6fc3c2db1e43e27332ae6a86639785",
+      "gps": {
+        "lat": 38.7223,
+        "lon": -9.1393,
+        "alt": 12.0,
+        "accuracyM": 5.0
+      }
+    },
+    {
+      "id": "01a20807-8c48-7a39-a836-3ce3db2d4849",
+      "kind": "text",
+      "at": "2026-11-23T10:50:42.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 512000,
+      "text": "Asked me not to photograph the ledger."
+    },
+    {
+      "id": "01a20808-24a0-7ca9-8fa7-8ebbbcea9443",
+      "kind": "marker",
+      "type": "paused",
+      "at": "2026-11-23T10:51:21.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a207ff-bc48-788e-a280-938ad5a104f2",
+      "offsetMs": 551000
+    },
+    {
+      "id": "01a20808-47c8-72c3-9584-dc7be1a74c19",
+      "kind": "marker",
+      "type": "location-off",
+      "at": "2026-11-23T10:51:30.120Z",
+      "utcOffset": "+00:00"
+    },
+    {
+      "id": "01a20808-e408-72a4-a6dc-b84d454e1d78",
+      "kind": "text",
+      "at": "2026-11-23T10:52:10.120Z",
+      "utcOffset": "+00:00",
+      "text": "Off the record: the lease runs out in March."
+    },
+    {
+      "id": "01a20809-8048-7524-a6eb-e2e08a1c28f2",
+      "kind": "video",
+      "at": "2026-11-23T10:52:50.120Z",
+      "utcOffset": "+00:00",
+      "durationMs": 12000,
+      "endedBy": "user",
+      "sound": false,
+      "file": "video/clip-0002.mov",
+      "sha256": "2625e526eb26898f036daef8153099ee1461be8710b7e55e10d166804ee1940a"
+    },
+    {
+      "id": "01a2080a-6aa8-7b8f-b834-554a2f06ad8e",
+      "kind": "marker",
+      "type": "resumed",
+      "at": "2026-11-23T10:53:50.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a2080a-6aa8-7841-b14d-557d89349eb9",
+      "offsetMs": 0
+    },
+    {
+      "id": "01a2080b-5508-7178-809a-13eb61bc4ed0",
+      "kind": "photo",
+      "at": "2026-11-23T10:54:50.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a2080a-6aa8-7841-b14d-557d89349eb9",
+      "offsetMs": 60000,
+      "file": "photos/photo-0002.heic",
+      "sha256": "616ecca48da1ae4fb5925ed0f0af3ffc0f14c75784edcb984dc177be58ae221f"
+    },
+    {
+      "id": "01a2080b-f148-761e-b5d6-8fa41a22d7d4",
+      "kind": "marker",
+      "type": "stopped",
+      "at": "2026-11-23T10:55:30.120Z",
+      "utcOffset": "+00:00",
+      "spanId": "01a2080a-6aa8-7841-b14d-557d89349eb9",
+      "offsetMs": 100000
+    }
+  ]
+}
