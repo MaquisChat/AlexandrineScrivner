@@ -6,7 +6,7 @@ public enum NotesMarkdown {
     public static func render(_ manifest: Manifest) -> String {
         var paragraphs: [String] = []
 
-        paragraphs.append("# \(manifest.title)")
+        paragraphs.append("# \(manifest.displayTitle)")
 
         let created = LocalClock(manifest.createdAt, offset: manifest.utcOffset)
         var header = "Started \(four(created.year))-\(two(created.month))-\(two(created.day)) "

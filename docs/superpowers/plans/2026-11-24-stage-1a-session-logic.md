@@ -319,6 +319,17 @@ func testNoMicrophone()                                  // FakeAudio throws on 
 
 ---
 
+**As built (2026-11-24), where it differs from the text above:**
+
+- There is no `PhotoCapturing` protocol and no `takePhoto()`. The screen takes a photo in two steps: `preparePhoto() -> PhotoRequest` at the shutter (file name, where to write, the moment, the place), then `photoSaved(_:)` or `photoFailed(_:reason:)` when the camera has finished. A real camera answers later, not at once.
+- A photo reported after a pause is placed on the span that was recording when the shutter was pressed.
+- An untitled session keeps an empty title in `session.json`; `Manifest.displayTitle` gives `2026-11-23 10:42` wherever a title is shown.
+- `setTitle` renames the folder only once nothing is being recorded into it.
+- Typing is saved at most every two seconds; `saveIfNeeded()` saves what is pending.
+- The start location is only taken from a reading within two minutes of the start.
+- A photo taken after stop makes the session unfinished until the next stop.
+- `SessionTimeline` gained `addMarker`, `setChecksums`, `clearChecksums`, `openSpanElapsedMs(at:)`; `SessionStore` gained `checksums(for:in:)`.
+
 ### Task 5: Coming back after the app was killed
 
 **Files:**

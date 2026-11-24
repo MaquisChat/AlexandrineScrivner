@@ -107,6 +107,20 @@ public enum SessionStore {
         return "\(prefix)\(padded).\(ext)"
     }
 
+    /// The SHA-256 of every file the manifest lists, by its path. A listed file that is not on
+    /// disk is an error. Paths that are not tidy relative paths are not opened and get no checksum.
+    public static func checksums(for manifest: Manifest, in folder: SessionFolder) throws -> [String: String] {
+        var sums: [String: String] = [:]
+        for path in listedFiles(in: manifest) where Manifest.isTidyRelativePath(path) && sums[path] == nil {
+            let url = folder.url(forRelativePath: path)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                throw SessionStoreError.missingFile(path)
+            }
+            sums[path] = try SHA256Hex.ofFile(at: url)
+        }
+        return sums
+    }
+
     /// Hashes every listed file, checks the session is complete and consistent, saves it and
     /// returns it. A listed file that is not on disk, or any inconsistency, is an error.
     public static func finalize(_ manifest: Manifest, in folder: SessionFolder) throws -> Manifest {

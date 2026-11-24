@@ -116,6 +116,21 @@ public struct InkStroke: Equatable, Sendable {
     }
 }
 
+extension Manifest {
+    /// The title to show. A session the owner has not named shows its local date and start time,
+    /// `2026-11-23 10:42`; the title kept in the file stays empty, so the folder's name does not
+    /// say the date twice.
+    public var displayTitle: String {
+        guard title.isEmpty else { return title }
+        let clock = LocalClock(createdAt, offset: utcOffset)
+        func padded(_ value: Int, _ width: Int) -> String {
+            let text = String(value)
+            return String(repeating: "0", count: max(0, width - text.count)) + text
+        }
+        return "\(padded(clock.year, 4))-\(padded(clock.month, 2))-\(padded(clock.day, 2)) \(padded(clock.hour, 2)):\(padded(clock.minute, 2))"
+    }
+}
+
 /// One thing on the page.
 public enum Item: Equatable, Sendable {
     case marker(Placement, type: MarkerType, detail: String?)

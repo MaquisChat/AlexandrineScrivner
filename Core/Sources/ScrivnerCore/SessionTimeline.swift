@@ -39,6 +39,10 @@ public struct SessionTimeline: Sendable {
 
     private var ids: any IdSource
     private var openSpanHostStart: Double?
+    /// When each span made in this run began and ended on the monotonic clock. Lets something that
+    /// reports late (a photo still being written when recording paused) be placed on the span that
+    /// was open at the moment it was made. Empty for spans loaded from disk.
+    private var spanHostRanges: [(spanId: String, start: Double, end: Double?)] = []
     private var openClipHostStarts: [String: Double] = [:]
     private var hasRecorded: Bool
 
@@ -103,6 +107,7 @@ public struct SessionTimeline: Sendable {
                                    utcOffset: moment.utcOffset, timeZone: moment.timeZone,
                                    durationMs: nil, endedBy: nil))
         openSpanHostStart = moment.host
+        spanHostRanges.append((spanId, moment.host, nil))
         let type: MarkerType = hasRecorded ? .resumed : .recordingStarted
         hasRecorded = true
         manifest.items.append(.marker(place(at: moment), type: type, detail: nil))
@@ -133,6 +138,62 @@ public struct SessionTimeline: Sendable {
         closeSpan(at: index, by: end,
                   durationMs: audioDurationMs ?? Self.milliseconds(from: start, to: moment.host))
         openSpanHostStart = nil
+        if let last = spanHostRanges.indices.last, spanHostRanges[last].end == nil {
+            spanHostRanges[last].end = moment.host
+        }
+    }
+
+    /// How long the open span has been recording, by the monotonic clock. Nil when nothing is recording.
+    public func openSpanElapsedMs(at moment: Moment) -> Int? {
+        openSpanHostStart.map { max(0, Self.milliseconds(from: $0, to: moment.host)) }
+    }
+
+    /// Writes a marker on the page that no other call writes: the end of a session that was paused
+    /// when it was stopped, or an interruption that left nothing open to close.
+    public mutating func addMarker(_ type: MarkerType, detail: String? = nil, at moment: Moment) throws {
+        guard !needsRecovery else { throw TimelineError.needsRecovery }
+        manifest.items.append(.marker(place(at: moment), type: type, detail: detail))
+    }
+
+    // MARK: - Checksums
+
+    /// Sets the checksum of every listed file that `sums` has, by its path.
+    public mutating func setChecksums(_ sums: [String: String]) {
+        for index in manifest.spans.indices {
+            if let sum = sums[manifest.spans[index].file] { manifest.spans[index].sha256 = sum }
+        }
+        for index in manifest.items.indices {
+            switch manifest.items[index] {
+            case .photo(let p, let file, let sha256, let gps):
+                manifest.items[index] = .photo(p, file: file, sha256: sums[file] ?? sha256, gps: gps)
+            case .video(let p, let durationMs, let endedBy, let sound, let file, let sha256, let gps):
+                manifest.items[index] = .video(p, durationMs: durationMs, endedBy: endedBy, sound: sound, file: file,
+                                               sha256: sums[file] ?? sha256, gps: gps)
+            case .ink(let p, let endAt, let file, let sha256, let data, let dataSha256, let strokes):
+                manifest.items[index] = .ink(p, endAt: endAt, file: file, sha256: sums[file] ?? sha256, data: data,
+                                             dataSha256: sums[data] ?? dataSha256, strokes: strokes)
+            case .marker, .text:
+                break
+            }
+        }
+    }
+
+    /// Removes every checksum: the session is being added to again, and a checksum must never
+    /// sit beside a file that may have changed.
+    public mutating func clearChecksums() {
+        for index in manifest.spans.indices { manifest.spans[index].sha256 = nil }
+        for index in manifest.items.indices {
+            switch manifest.items[index] {
+            case .photo(let p, let file, _, let gps):
+                manifest.items[index] = .photo(p, file: file, sha256: nil, gps: gps)
+            case .video(let p, let durationMs, let endedBy, let sound, let file, _, let gps):
+                manifest.items[index] = .video(p, durationMs: durationMs, endedBy: endedBy, sound: sound, file: file, sha256: nil, gps: gps)
+            case .ink(let p, let endAt, let file, _, let data, _, let strokes):
+                manifest.items[index] = .ink(p, endAt: endAt, file: file, sha256: nil, data: data, dataSha256: nil, strokes: strokes)
+            case .marker, .text:
+                break
+            }
+        }
     }
 
     /// After the app was cut off: closes what was left open and notes the interruption.
@@ -294,11 +355,18 @@ public struct SessionTimeline: Sendable {
         Int(((end - start) * 1000).rounded())
     }
 
-    /// A new item's id, instant and, while recording, its position on the open span.
+    /// A new item's id, instant and its position on the span that was recording at that moment.
+    ///
+    /// Usually that is the open span. It can also be a span that has since closed, when something
+    /// made during it is only reported afterwards; its position is then kept inside the span's audio.
     private mutating func place(at moment: Moment) -> Placement {
         let id = ids.next(at: moment.wall)
-        if let start = openSpanHostStart, let span = manifest.spans.last {
-            let offset = max(0, Self.milliseconds(from: start, to: moment.host))
+        let covering = spanHostRanges.last { range in
+            moment.host >= range.start && (range.end.map { moment.host <= $0 } ?? true)
+        }
+        if let covering, let span = manifest.spans.first(where: { $0.id == covering.spanId }) {
+            var offset = max(0, Self.milliseconds(from: covering.start, to: moment.host))
+            if let duration = span.durationMs { offset = min(offset, duration) }
             return Placement(id: id, at: moment.wall, utcOffset: moment.utcOffset, spanId: span.id, offsetMs: offset)
         }
         return Placement(id: id, at: moment.wall, utcOffset: moment.utcOffset, spanId: nil, offsetMs: nil)

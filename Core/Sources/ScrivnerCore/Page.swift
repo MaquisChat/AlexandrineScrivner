@@ -33,7 +33,7 @@ public struct Page: Equatable, Sendable {
     public let rows: [PageRow]
 
     public init(_ manifest: Manifest, style: ClockStyle) {
-        title = manifest.title
+        title = manifest.displayTitle
         rows = manifest.items.map { item in
             let placement = item.placement
             let content: PageRow.Content
