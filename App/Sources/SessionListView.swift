@@ -79,7 +79,7 @@ struct SessionListView: View {
                 .font(Theme.note(24))
                 .foregroundStyle(Theme.ink)
             Text("A session records audio while you write notes and take photos. Everything is stamped with its time.")
-                .font(.system(size: 15))
+                .font(Theme.ui(15))
                 .foregroundStyle(Theme.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 36)
@@ -118,10 +118,10 @@ struct SessionListView: View {
             ForEach(model.unreadable, id: \.self) { name in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.ui(15, .semibold))
                         .foregroundStyle(Theme.ink)
                     Text("This session's record cannot be read. Its recordings are still in the Files app.")
-                        .font(.system(size: 13))
+                        .font(Theme.ui(13))
                         .foregroundStyle(Theme.recording)
                 }
             }
@@ -138,7 +138,7 @@ struct SessionListView: View {
                     .fill(Theme.recording)
                     .frame(width: 12, height: 12)
                 Text("New session")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(Theme.ui(17, .semibold))
             }
             .frame(maxWidth: .infinity, minHeight: 54)
             .foregroundStyle(Theme.ink)
@@ -164,11 +164,11 @@ private struct SessionRow: View {
                 .foregroundStyle(Theme.ink)
                 .lineLimit(2)
             Text(detail)
-                .font(.system(size: 13))
+                .font(Theme.ui(13))
                 .foregroundStyle(Theme.secondary)
             if !status.isEmpty {
                 Text(status)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Theme.ui(12, .semibold))
                     .foregroundStyle(summary.isFinished ? Theme.accent : Theme.recording)
                     .accessibilityIdentifier("session-status")
             }
@@ -211,7 +211,7 @@ private struct InstallBanner: View {
 
     var body: some View {
         Text(warning.text)
-            .font(.system(size: 13, weight: warning.isUrgent ? .semibold : .regular))
+            .font(Theme.ui(13, warning.isUrgent ? .semibold : .regular))
             .foregroundStyle(warning.isUrgent ? Color.white : Theme.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)

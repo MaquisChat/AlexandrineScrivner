@@ -125,7 +125,7 @@ struct LayoutSwitch: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: isMargin ? "sidebar.left" : "doc.plaintext")
-                .font(.system(size: 18))
+                .font(Theme.ui(18))
                 .frame(width: 44, height: 44)
                 .foregroundStyle(isMargin ? Theme.accent : Theme.ink)
                 .background(isMargin ? Theme.accentWash : Theme.paper)
@@ -154,7 +154,7 @@ struct SessionMenu: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 18, weight: .semibold))
+                .font(Theme.ui(18, .semibold))
                 .frame(width: 44, height: 44)
                 .foregroundStyle(Theme.ink)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.rule))
@@ -181,7 +181,7 @@ struct StateBanner: View {
 
     private func line(_ text: String, identifier: String) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: .semibold))
+            .font(Theme.ui(13, .semibold))
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
@@ -200,12 +200,12 @@ struct NoticeBanner: View {
         if let latest = notices.last {
             HStack(alignment: .top, spacing: 10) {
                 Text(latest.text)
-                    .font(.system(size: 13))
+                    .font(Theme.ui(13))
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("notice")
                 Button("OK", action: onDismiss)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.ui(13, .semibold))
                     .accessibilityIdentifier("dismiss-notice")
             }
             .padding(.horizontal, 16)

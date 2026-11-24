@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Colours and type, taken from the approved mockups.
 enum Theme {
@@ -14,8 +15,18 @@ enum Theme {
     static let pill = Color(red: 0xF1 / 255, green: 0xEF / 255, blue: 0xE9 / 255)
     static let thumbnail = Color(red: 0xE9 / 255, green: 0xE7 / 255, blue: 0xE1 / 255)
 
+    /// A size from the mockups, grown or shrunk with the text size chosen in the phone's settings.
+    static func scaled(_ size: CGFloat) -> CGFloat {
+        UIFontMetrics(forTextStyle: .body).scaledValue(for: size)
+    }
+
     /// The face notes are set in.
     static func note(_ size: CGFloat) -> Font {
-        .system(size: size, design: .serif)
+        .system(size: scaled(size), design: .serif)
+    }
+
+    /// The face controls and small print are set in.
+    static func ui(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        .system(size: scaled(size), weight: weight)
     }
 }

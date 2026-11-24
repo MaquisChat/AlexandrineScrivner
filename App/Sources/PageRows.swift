@@ -11,7 +11,7 @@ struct MarginRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Text(row.time)
-                .font(.system(size: 12))
+                .font(Theme.ui(12))
                 .monospacedDigit()
                 .foregroundStyle(Theme.secondary)
                 .frame(width: MarginRow.marginWidth(for: session.style), alignment: .trailing)
@@ -24,7 +24,8 @@ struct MarginRow: View {
 
     /// The margin is a little wider when times carry "am" or "pm".
     static func marginWidth(for style: ClockStyle) -> CGFloat {
-        style == .twelveHour ? 66 : 58
+        // Grows with the text size, up to a point: at the very largest sizes the times wrap instead.
+        min(Theme.scaled(style == .twelveHour ? 66 : 58), 110)
     }
 
     /// Sets the small time level with the first line of what is beside it.
@@ -51,7 +52,7 @@ struct MarginRow: View {
                     .accessibilityIdentifier("note")
                 if edited {
                     Text("edited")
-                        .font(.system(size: 11))
+                        .font(Theme.ui(11))
                         .foregroundStyle(Theme.secondary)
                 }
             }
@@ -63,11 +64,11 @@ struct MarginRow: View {
                 .accessibilityIdentifier("photo-row")
         case .video(_, let length, let note):
             Label([length, note].compactMap { $0 }.joined(separator: ", "), systemImage: "video")
-                .font(.system(size: 13))
+                .font(Theme.ui(13))
                 .foregroundStyle(Theme.secondary)
         case .ink:
             Label("Handwriting", systemImage: "pencil.tip")
-                .font(.system(size: 13))
+                .font(Theme.ui(13))
                 .foregroundStyle(Theme.secondary)
         }
     }
@@ -90,7 +91,7 @@ struct MarkerLine: View {
                     .accessibilityHidden(true)
             }
             Text(text)
-                .font(.system(size: 12, weight: .semibold))
+                .font(Theme.ui(12, .semibold))
                 .foregroundStyle(isAboutRecording ? Theme.recording : Theme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("marker")

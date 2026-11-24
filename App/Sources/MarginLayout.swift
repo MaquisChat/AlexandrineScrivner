@@ -29,7 +29,7 @@ struct MarginLayout: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(stateWord)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(Theme.ui(12, .semibold))
                     .textCase(.uppercase)
                     .kerning(0.6)
                     .foregroundStyle(session.isRecording ? Theme.recording : Theme.secondary)
@@ -37,7 +37,7 @@ struct MarginLayout: View {
                     .accessibilityLabel(stateWord)
                     .accessibilityIdentifier("recorder-state")
                 Text(session.counter)
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(Theme.ui(26, .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Theme.ink)
                     .accessibilityIdentifier("counter")
@@ -49,7 +49,7 @@ struct MarginLayout: View {
                 session.isRecording ? session.pause() : session.resume()
             } label: {
                 Image(systemName: session.isRecording ? "pause.fill" : "record.circle")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(Theme.ui(20, .semibold))
                     .frame(width: 44, height: 44)
                     .foregroundStyle(session.isRecording ? Theme.ink : Theme.recording)
                     .overlay(Circle().stroke(Theme.outline))
@@ -78,7 +78,7 @@ struct MarginLayout: View {
         HStack(spacing: 8) {
             Button(action: actions.rename) {
                 Text(session.participants.isEmpty ? session.page.title : "\(session.page.title) · \(session.participants)")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.ui(13, .semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
                     .frame(minHeight: 32)
@@ -89,7 +89,7 @@ struct MarginLayout: View {
             Button(action: actions.toggleLocation) {
                 Label(session.isLocationOn ? "Location on" : "Location off",
                       systemImage: session.isLocationOn ? "location.fill" : "location.slash")
-                    .font(.system(size: 13))
+                    .font(Theme.ui(13))
                     .foregroundStyle(Theme.secondary)
                     .labelStyle(.titleAndIcon)
                     .frame(minHeight: 32)
@@ -99,14 +99,14 @@ struct MarginLayout: View {
             .accessibilityHint(session.isLocationOn ? "Turns location off" : "Turns location on")
             if session.isRecording || !session.isFinished {
                 Button("Stop", action: actions.stop)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.ui(13, .semibold))
                     .foregroundStyle(Theme.recording)
                     .frame(minWidth: 44, minHeight: 32)
                     .accessibilityIdentifier("stop")
                     .accessibilityLabel("Stop session")
             } else {
                 Button("Close", action: actions.close)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(Theme.ui(13, .semibold))
                     .frame(minWidth: 44, minHeight: 32)
                     .accessibilityIdentifier("close")
             }
@@ -143,7 +143,7 @@ struct MarginLayout: View {
     private var noteField: some View {
         HStack(alignment: .top, spacing: 10) {
             Text(session.draftTime)
-                .font(.system(size: 12))
+                .font(Theme.ui(12))
                 .monospacedDigit()
                 .foregroundStyle(Theme.secondary)
                 .frame(width: MarginRow.marginWidth(for: session.style), alignment: .trailing)
@@ -178,7 +178,7 @@ struct MarginLayout: View {
                 actions.hide()
             } label: {
                 Label("Hide", systemImage: "eye.slash")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(Theme.ui(17, .semibold))
                     .frame(minWidth: 120, minHeight: 52)
                     .foregroundStyle(Color.white)
                     .background(Theme.ink)
@@ -204,9 +204,9 @@ private struct BarButton: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 20))
+                    .font(Theme.ui(20))
                 Text(title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(Theme.ui(12, .medium))
             }
             .frame(minWidth: 64, minHeight: 52)
             .foregroundStyle(Theme.ink)

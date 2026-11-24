@@ -195,4 +195,22 @@ final class WalkthroughTests: XCTestCase {
         XCTAssertTrue(anything(saying: "Not shared yet").exists)
         shot("list-after-a-whole-session")
     }
+
+    /// The session the last walk left, read again with the phone's text size set large.
+    /// It only looks: the session is left exactly as it was, for the checker.
+    func test4LargeText() {
+        app.launchArguments = ["-uiTesting", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"]
+        launch()
+        let row = app.buttons["session-row"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 60))
+        shot("large-text-list")
+        row.tap()
+        XCTAssertTrue(element("recorder-state").waitForExistence(timeout: 60))
+        XCTAssertEqual(recorderState, "stopped")
+        XCTAssertTrue(app.buttons["photo"].isHittable, "no control is pushed off the screen")
+        XCTAssertTrue(app.buttons["hide"].isHittable)
+        shot("large-text")
+        app.buttons["close"].tap()
+        XCTAssertTrue(app.buttons["new-session"].waitForExistence(timeout: 60))
+    }
 }

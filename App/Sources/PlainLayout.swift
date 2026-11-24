@@ -31,7 +31,7 @@ struct PlainLayout: View {
                     .lineLimit(2)
                     .accessibilityIdentifier("session-title")
                 Text(session.startedLine)
-                    .font(.system(size: 13))
+                    .font(Theme.ui(13))
                     .foregroundStyle(Theme.secondary)
             }
             Spacer(minLength: 0)
@@ -45,7 +45,7 @@ struct PlainLayout: View {
                         .fill(session.isRecording ? Theme.recording : Theme.outline)
                         .frame(width: 9, height: 9)
                     Text(session.counter)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(Theme.ui(15, .semibold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink)
                 }
@@ -124,7 +124,7 @@ private struct RoundButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 21))
+                .font(Theme.ui(21))
                 .frame(width: 56, height: 56)
                 .foregroundStyle(filled ? Color.white : Theme.ink)
                 .background(filled ? Theme.ink : Theme.paper)
@@ -199,7 +199,7 @@ private struct PlainBlockView: View {
             HStack(spacing: 10) {
                 Rectangle().fill(Theme.rule).frame(height: 1)
                 Text(text)
-                    .font(.system(size: 12))
+                    .font(Theme.ui(12))
                     .foregroundStyle(Theme.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -219,7 +219,7 @@ private struct PlainBlockView: View {
                     }
                     if edited {
                         Text("edited")
-                            .font(.system(size: 11))
+                            .font(Theme.ui(11))
                             .foregroundStyle(Theme.secondary)
                     }
                 }
@@ -263,7 +263,7 @@ private struct PlainMedia: View {
                     .overlay(Image(systemName: "pencil.tip").foregroundStyle(Theme.secondary))
             }
             Text(row.time)
-                .font(.system(size: 12))
+                .font(Theme.ui(12))
                 .monospacedDigit()
                 .foregroundStyle(Theme.secondary)
         }
