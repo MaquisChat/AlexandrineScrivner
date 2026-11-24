@@ -28,7 +28,7 @@ Inputs the spec implies that are most likely to bite, each pinned by a test in t
 2. **A Mac whose own time zone is not UTC.** ExifTool then prints QuickTime times in the Mac's zone, with its offset. Instants must still compare correctly. `testQuickTimeDatesInAnotherSystemZone` (Task 2).
 3. **Location switched off, but a file carries a place anyway.** That is a privacy failure and must be a problem. `testLocationInsideAFileThatShouldHaveNone` (Task 3).
 4. **A `session.json` that names a file outside the folder** (`../../x`). The checker reports it and never opens the file. `testPathsOutsideTheFolderAreNeverOpened` (Task 4).
-5. **A session still recording, or cut off by a crash.** One clear warning, not a list of missing checksums. `testUnfinishedSessionGetsOneWarning` (Task 4).
+5. **A session still recording, or cut off by a crash.** One clear finding, not a list of missing checksums. `testUnfinishedSessionGetsOneFinding` (Task 4).
 6. **Southern and western hemispheres, and below sea level.** Signs must come out right from EXIF's separate reference tags. `testHemispheresAndBelowSeaLevel` (Task 2).
 
 ---
@@ -336,7 +336,7 @@ Rules, in this order:
 
 1. `session.json` is missing or not text → problem, subject `session.json`, `is missing` / `is not readable text`. Stop; manifest nil.
 2. It does not decode → problem, subject `session.json`, `<path>: <message>` from `ManifestDecodeError` (or `is not valid JSON: <reason>`). Stop; manifest nil.
-3. The last span has no `endedBy` → warning, subject `session.json`, `the session was not finished: it was still recording, or was cut off. Open it in the app so it can be recovered.` The session then counts as unfinished.
+3. A span is open, or a listed file has no checksum → problem, subject `session.json`, `the session was not finished: it was still recording, was cut off, or its files have no checksums yet. Open it in the app so it can be finished.` The session then counts as unfinished. (A problem, not a warning: only a finished session should be imported, so the verdict must not be OK.)
 4. Every `manifest.problems(finished:)` (finished unless rule 3 fired) → problem, subject `session.json`, `<path> <message>`.
 5. Every listed file whose path is tidy: not there → problem `is listed in session.json but is not in the folder`; there but empty → problem `is empty`; a checksum is listed and differs → problem `does not match its checksum in session.json: the file has changed or is damaged`. A path that is not tidy is never opened (rule 4 has already reported it).
 6. Every file found under the folder that is not listed, other than `session.json` and `notes.md` → warning, subject its path, `is in the folder but not listed in session.json`. Hidden files (name starting with a dot) included.
@@ -358,7 +358,7 @@ func testEmptyMediaFile()                           // truncate video/clip-0001.
 func testStrayFilesAreWarnings()                    // add ".DS_Store", "photos/._photo-0001.heic", "extra.txt" → 3 warnings, 0 problems
 func testNotesMissingOrStale()                      // remove notes.md → 1 warning; write "x" to it → 1 warning "is out of date with session.json"
 func testRenamedFolder()                            // move the folder to "Renamed" → 1 warning, subject "folder"
-func testUnfinishedSessionGetsOneWarning()          // SessionTimeline with startRecording and a photo, SessionStore.create, photo file written, no finalize → exactly 1 warning (rule 3), 0 problems
+func testUnfinishedSessionGetsOneFinding()          // SessionTimeline with startRecording and a photo, SessionStore.create, files written, no finalize → exactly the rule 3 problem and nothing else; the same after stop without finalize; clean after finalize
 func testPathsOutsideTheFolderAreNeverOpened()      // edit session.json so a photo's file is "../outside.heic", and put a real file at that place → findings include the rule 4 problem for items[n].file and nothing with subject "../outside.heic"
 ```
 
