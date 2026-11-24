@@ -30,6 +30,10 @@ struct NoteField: UIViewRepresentable {
         view.accessibilityIdentifier = "note-field"
         view.accessibilityLabel = "Note"
         view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        if focus.handOver {
+            focus.handOver = false
+            Self.giveKeyboard(to: view)
+        }
         return view
     }
 
@@ -52,9 +56,10 @@ struct NoteField: UIViewRepresentable {
     /// A field that has only just been made is not on screen yet; wait, briefly, until it is.
     static func giveKeyboard(to view: UITextView) {
         Task { @MainActor in
-            for _ in 0..<20 {
-                if view.window != nil {
-                    view.becomeFirstResponder()
+            for _ in 0..<30 {
+                // Asked again until it is taken: a box that is on screen can still say no for a
+                // moment, while another is giving the keyboard up.
+                if view.window != nil, view.becomeFirstResponder() {
                     return
                 }
                 try? await Task.sleep(nanoseconds: 100_000_000)
@@ -153,6 +158,9 @@ final class WritingFocus: ObservableObject {
     @Published private(set) var request = 0
     /// True from the moment the keyboard is asked for until a field takes it.
     var wantsKeyboard = false
+    /// Set when the layout is about to change while the owner is writing: the next note field
+    /// to be made takes the keyboard, so the writing carries on in the other layout.
+    var handOver = false
     /// Whether the note field has the keyboard. Read when hiding or switching layout; nothing is
     /// drawn from it, so it is not published.
     var isWriting = false

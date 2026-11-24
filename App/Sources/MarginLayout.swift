@@ -105,10 +105,14 @@ struct MarginLayout: View {
     private var page: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 18) {
-                    ForEach(session.rows) { row in
-                        MarginRow(row: row, session: session, onEdit: actions.edit)
+                VStack(alignment: .leading, spacing: 18) {
+                    LazyVStack(alignment: .leading, spacing: 18) {
+                        ForEach(session.rows) { row in
+                            MarginRow(row: row, session: session, onEdit: actions.edit)
+                        }
                     }
+                    // Outside the part of the page that is built only as it comes into view: a
+                    // box that was thrown away and made again would drop the keyboard.
                     noteField
                         .id("note-field")
                 }

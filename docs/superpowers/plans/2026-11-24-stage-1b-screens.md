@@ -50,11 +50,11 @@ Because each round takes several minutes, a UI test and the screen it drives are
 **Interfaces:**
 - Produces: `preparePhoto(fileExtension: String = "heic") -> PhotoRequest`, so the stand-in camera can write a JPEG where the simulator cannot write HEIC; numbering is shared across endings. `var isFinished: Bool` (no span open and every file has its checksum). `var openNoteText: String?` (the text of the note being written, for the screen to show after coming back from the cover).
 
-- [ ] **Step 1: Failing tests** `testAPhotoCanBeAJPEG` (`preparePhoto(fileExtension: "jpg")` → `photos/photo-0001.jpg`, then the default → `photos/photo-0002.heic`), `testIsFinished` (false while recording, true after stop, false after resume), `testOpenNoteText`.
-- [ ] **Step 2: Run on Linux; see them fail to build.**
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: `swift test --package-path Core` passes.**
-- [ ] **Step 5: Commit.** `feat(core): what the screens need from the session controller`
+- [x] **Step 1: Failing tests** `testAPhotoCanBeAJPEG` (`preparePhoto(fileExtension: "jpg")` → `photos/photo-0001.jpg`, then the default → `photos/photo-0002.heic`), `testIsFinished` (false while recording, true after stop, false after resume), `testOpenNoteText`.
+- [x] **Step 2: Run on Linux; see them fail to build.**
+- [x] **Step 3: Implement.**
+- [x] **Step 4: `swift test --package-path Core` passes.**
+- [x] **Step 5: Commit.** `feat(core): what the screens need from the session controller`
 
 ---
 
@@ -71,10 +71,10 @@ Because each round takes several minutes, a UI test and the screen it drives are
   - `SessionListView`: title "Sessions", a "New session" button (identifier `new-session`), one row per session (title, date and start time, length, photo count, "Not finished" or the export state), the install warning when there is one, and an empty state.
   - `tools/mac-walkthrough.sh`: builds for the simulator, runs the UI tests on "iPhone 17 Pro", exports the screenshots to `build/screenshots/`. Last line `WALKTHROUGH OK` or `WALKTHROUGH FAILED: <why>`.
 
-- [ ] **Step 1: Write the project, the skeleton and one UI test** `testTheListStartsEmpty`: launch with `-uiTesting`, expect the text "No sessions yet" and the `new-session` button, take the screenshot `empty-list`.
-- [ ] **Step 2: Push; read the hosted Mac's log; fix until the app builds and the test passes.**
-- [ ] **Step 3: Download the screenshot and look at it.**
-- [ ] **Step 4: Commit.** `feat(app): the app's skeleton and the session list`
+- [x] **Step 1: Write the project, the skeleton and one UI test** `testTheListStartsEmpty`: launch with `-uiTesting`, expect the text "No sessions yet" and the `new-session` button, take the screenshot `empty-list`.
+- [x] **Step 2: Push; read the hosted Mac's log; fix until the app builds and the test passes.**
+- [x] **Step 3: Download the screenshot and look at it.**
+- [x] **Step 4: Commit.** `feat(app): the app's skeleton and the session list`
 
 ---
 
@@ -93,10 +93,10 @@ Because each round takes several minutes, a UI test and the screen it drives are
   - `SessionModel` (`@MainActor`, `ObservableObject`): wraps one `SessionController`; publishes `page`, `isRecording`, `counter` (text from `Wording.length`), `isLocationOn`, `notices`, `draft` (the note being typed); methods `pause`, `resume`, `stop`, `takePhoto`, `noteChanged`, `noteFinished`, `setLocation`, `setTitle`. A one-second timer refreshes the counter and calls `saveIfNeeded`.
   - `SessionView` with the margin layout: the recorder bar (red dot, "Recording" or "Paused", the counter, pause or resume; identifiers `recorder-state`, `counter`, `pause-resume`), the strip (title and participants, location state), the rows with their times in a 58-point margin, the note field at the foot of the page (identifier `note-field`; return finishes the note), and the bottom bar with Photo, Video (shown but disabled until stage 2) and Hide (identifiers `photo`, `hide`), and a Stop button behind a confirmation (identifier `stop`).
 
-- [ ] **Step 1: UI tests** `testStartingASession` (tap `new-session` → `recorder-state` reads "Recording", the first row reads "Recording started"), `testWritingTwoNotes` (type a line, return, type another, return → both on the page in order), `testTakingAPhoto`, `testPauseAndResume`, `testStopReturnsToTheListWithTheSessionFinished`, and screenshots `margin-layout`, `untitled-session`.
-- [ ] **Step 2: Implement; push; fix until green on the hosted Mac.**
-- [ ] **Step 3: Look at the screenshots against the mockup; fix what is off.**
-- [ ] **Step 4: Commit.** `feat(app): a session on screen, with stand-in hardware`
+- [x] **Step 1: UI tests** `testStartingASession` (tap `new-session` → `recorder-state` reads "Recording", the first row reads "Recording started"), `testWritingTwoNotes` (type a line, return, type another, return → both on the page in order), `testTakingAPhoto`, `testPauseAndResume`, `testStopReturnsToTheListWithTheSessionFinished`, and screenshots `margin-layout`, `untitled-session`.
+- [x] **Step 2: Implement; push; fix until green on the hosted Mac.**
+- [x] **Step 3: Look at the screenshots against the mockup; fix what is off.**
+- [x] **Step 4: Commit.** `feat(app): a session on screen, with stand-in hardware`
 
 ---
 
@@ -113,10 +113,10 @@ Because each round takes several minutes, a UI test and the screen it drives are
   - `protocol Cover { associatedtype Body: View; var body: Body { get } }` with `BlankCover`; `CoverHost` shows the chosen cover over everything, hides the status bar and home indicator, ignores single taps and typing, and dismisses on a double tap or the keyboard shortcut ⌘⇧H (the same shortcut hides). While covered, the app's snapshot for the app switcher is the cover.
   - On launch, a session that was cut off is opened through `SessionController.open`, and its `recovered` notice is shown as a banner.
 
-- [ ] **Step 1: UI tests** `testSwitchingLayouts` (screenshot `plain-layout`), `testHideAndReturn` (screenshot `hidden`, which must be entirely black; single tap does nothing; double tap returns with the half-typed note still in the field), `testComingBackAfterBeingClosed` (start, type, terminate the app, relaunch → the session is in the list as "Not finished"; opening it shows "Interrupted (the app was closed unexpectedly)").
-- [ ] **Step 2: Implement; push; fix until green.**
-- [ ] **Step 3: Look at the screenshots.**
-- [ ] **Step 4: Commit.** `feat(app): the plain layout, the switch, the cover, and recovery on launch`
+- [x] **Step 1: UI tests** `testSwitchingLayouts` (screenshot `plain-layout`), `testHideAndReturn` (screenshot `hidden`, which must be entirely black; single tap does nothing; double tap returns with the half-typed note still in the field), `testComingBackAfterBeingClosed` (start, type, terminate the app, relaunch → the session is in the list as "Not finished"; opening it shows "Interrupted (the app was closed unexpectedly)").
+- [x] **Step 2: Implement; push; fix until green.**
+- [x] **Step 3: Look at the screenshots.**
+- [x] **Step 4: Commit.** `feat(app): the plain layout, the switch, the cover, and recovery on launch`
 
 ---
 
@@ -134,9 +134,9 @@ Because each round takes several minutes, a UI test and the screen it drives are
   - Share: a zip of the session folder through the system share sheet (`NSFileCoordinator` with `.forUploading`), recorded in `ExportRecord` (`exports.json` beside `Sessions/`); the list shows "Shared 24 Nov, 10:42" or "Changed since it was shared".
   - Delete: swipe on a row, then a confirmation naming the session.
 
-- [ ] **Step 1: UI tests** `testDeletingASessionAsksFirst`, `testSettingsTurnLocationOffForNewSessions`, screenshots `list-with-sessions`, `large-text` (launch with the largest accessibility text size).
-- [ ] **Step 2: Implement; push; fix until green.**
-- [ ] **Step 3: Commit.** `feat(app): warnings, settings, sharing and deleting`
+- [x] **Step 1: UI tests** `testDeletingASessionAsksFirst`, `testSettingsTurnLocationOffForNewSessions`, screenshots `list-with-sessions`, `large-text` (launch with the largest accessibility text size).
+- [x] **Step 2: Implement; push; fix until green.**
+- [x] **Step 3: Commit.** `feat(app): warnings, settings, sharing and deleting`
 
 ---
 
@@ -145,7 +145,47 @@ Because each round takes several minutes, a UI test and the screen it drives are
 **Files:**
 - Modify: `tools/mac-walkthrough.sh`, `.github/workflows/mac.yml`, `README.md`, `docs/guides/mac-setup.md`
 
-- [ ] **Step 1:** After the walkthrough, `tools/mac-walkthrough.sh` copies the app's `Sessions/` folder out of the simulator (`xcrun simctl get_app_container`) to `build/walkthrough-sessions/` and runs `scrivner-check` on it. It must end `SESSION CHECK OK` for the finished sessions. With `--media` the report is printed but does not fail the run: the stand-in recorder does not write the tags a real recording will, and that is stage 1c's to close.
-- [ ] **Step 2:** The workflow keeps `build/screenshots/` and `build/walkthrough-sessions/` as artifacts.
-- [ ] **Step 3:** Docs: what the stage 1b app is and is not, and how the owner installs it (`tools/mac-install.sh` gains the app as a second target).
-- [ ] **Step 4: Commit and push; confirm on the hosted Mac.** `ci: the checker reads the session folders the app wrote in the simulator`
+- [x] **Step 1:** After the walkthrough, `tools/mac-walkthrough.sh` copies the app's `Sessions/` folder out of the simulator (`xcrun simctl get_app_container`) to `build/walkthrough-sessions/` and runs `scrivner-check` on it. It must end `SESSION CHECK OK` for the finished sessions. With `--media` the report is printed but does not fail the run: the stand-in recorder does not write the tags a real recording will, and that is stage 1c's to close.
+- [x] **Step 2:** The workflow keeps `build/screenshots/` and `build/walkthrough-sessions/` as artifacts.
+- [x] **Step 3:** Docs: what the stage 1b app is and is not, and how the owner installs it (`tools/mac-install.sh` gains the app as a second target).
+- [x] **Step 4: Commit and push; confirm on the hosted Mac.** `ci: the checker reads the session folders the app wrote in the simulator`
+
+---
+
+## Execution record (2026-11-24)
+
+All six tasks are done on branch `stage-1b`. The app is built for the iPhone simulator on a GitHub-hosted Mac on every push, walked through by `App/UITests/WalkthroughTests.swift`, photographed, and the session folders it writes are given to `scrivner-check`.
+
+As built, where it differs from the tasks above:
+
+- **Four long walks, not twelve separate tests.** Each launch takes about a minute on the hosted Mac. `test1ListSettingsAndDeleting`, `test2ComingBackAfterBeingClosed`, `test3AWholeSession`, `test4LargestTextInTheDark`. Every tap waits for its target and the walk carries on if it never comes, so one failure does not hide the rest.
+- **Screenshots are read from the run's log.** This session cannot fetch GitHub's stored files, so `tools/mac-walkthrough.sh` prints small copies as text when `SCRIVNER_PRINT_SCREENSHOTS=1`.
+- **No clock-style setting.** The app follows the phone's own 12-hour or 24-hour setting.
+- **The note field is a wrapped `UITextView`** (`App/Sources/NoteField.swift`), not a SwiftUI `TextField`: Return has to end a note exactly once and leave the keyboard up.
+
+A fresh reviewer then read the whole branch and returned "with fixes": one must-fix, thirteen should-fix and a list of smaller points. All of the first two groups were fixed, and most of the third. What the review changed:
+
+- A red line on every screen says this is a trial version that records no sound (`Trial`, `TrialBanner` in `Theme.swift`). Stage 1c removes it with the stand-ins.
+- Return ends a note directly; a repeated note is kept; pasted paragraphs become a note each.
+- Tapping a note opens it for changing or deleting (`NoteEditor`). Tapping the title opens the title and participant codes (`SessionDetails`).
+- The keyboard is up when a new session opens, comes back after the cover, and follows a change of layout (`WritingFocus`).
+- A session cut off when the app was closed is repaired when the app opens and made complete as it stands (`AppModel.repairSessionsThatWereCutOff`; in Core, `SessionController.open` finishes a recovered session). The list says what was done.
+- Opening a session only to read it never changes it: the "Location off" line owed by a setting that was turned off is written when something is next added (Core, three new tests).
+- Location is confirmed in both directions, and shown in both layouts.
+- The plain layout: controls on their own line above the title; the pill says what it is doing in words when not recording; the round buttons take their own room at the bottom; a Close button for a finished session.
+- Sessions are left out of backups. The walkthrough's reset switch and its dark-appearance switch are compiled for the simulator only.
+- Every notice is shown until dismissed. Stop stays on the session if it could not be finished. Pending changes are saved when the app leaves the front.
+- Dark appearance; text size up to the largest setting (notes grow all the way, controls and titles to one and a half times).
+- The keyboard shortcut is Command-Shift-B. VoiceOver's double tap dismisses the cover. `docs/adr/0004-the-cover.md` records the cover.
+- Zips made for sharing are removed afterwards and at launch.
+- The walkthrough's weak checks were rewritten: the hidden screen is compared pixel by pixel; markers are matched as markers; a photo is taken with location off; the title is changed; the layout is checked to be remembered between launches; stopping is done from the plain layout's menu.
+
+Every decision made without asking, and what was left for later, is in `docs/judgment-calls-2026-11-24.md` under "The iPhone app's screens".
+
+## What this adds to stage 1c's list
+
+- Remove `Trial` and `TrialBanner` together with the stand-ins, and only then.
+- The real recorder must keep counting while the app is in the background or the phone is locked; the stand-in does not.
+- Check on a real phone: what the app switcher shows, whether the home indicator hides under the cover, and locking while covered.
+- Sharing has no automatic check; walk through it by hand.
+- Make the zip off the main thread once sessions have real audio in them.

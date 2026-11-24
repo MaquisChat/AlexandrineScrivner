@@ -138,7 +138,12 @@ final class WalkthroughTests: XCTestCase {
             describeScreen("missing-" + what.replacingOccurrences(of: " ", with: "-"))
             return false
         }
-        element.tap()
+        if element.isHittable {
+            element.tap()
+        } else {
+            // The system cannot always say where to touch an item in a menu; its middle will do.
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
         return true
     }
 
@@ -360,6 +365,7 @@ final class WalkthroughTests: XCTestCase {
         XCTAssertTrue(marker("Resumed").waitForExistence(timeout: 60))
         XCTAssertEqual(recorderState, "recording")
         XCTAssertFalse(element("notice").exists, "nothing went wrong along the way")
+        XCTAssertTrue(noteFieldTakesKeyboard(), "the keyboard stays up when a line is added to a page longer than the screen")
         shot("margin-layout")
 
         // The same page, drawn the other way, with the keyboard carried over.

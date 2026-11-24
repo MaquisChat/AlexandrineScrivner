@@ -116,12 +116,9 @@ struct SessionView: View {
             close: { model.closeSession() },
             hide: { hide() },
             switchLayout: {
-                let wasWriting = focus.isWriting
+                // The other layout has its own field; carry the keyboard over to it.
+                focus.handOver = focus.isWriting
                 layout = (layout == "plain") ? "margin" : "plain"
-                if wasWriting {
-                    // The other layout has its own field; carry the keyboard over to it.
-                    Task { @MainActor in focus.ask() }
-                }
             },
             toggleLocation: { confirmingLocation = true },
             details: { showingDetails = true },

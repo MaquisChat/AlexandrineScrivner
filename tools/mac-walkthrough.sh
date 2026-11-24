@@ -61,6 +61,9 @@ xcodebuild test \
   -scheme Scrivner \
   -destination "platform=iOS Simulator,id=$SIMULATOR" \
   -parallel-testing-enabled NO \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 900 \
+  -maximum-test-execution-time-allowance 900 \
   -derivedDataPath build/DerivedData-walkthrough \
   -resultBundlePath "$RESULT" \
   2>&1 | scrub | tee -a "$LOG" | grep -E "^(Test Case|Test Suite|\*\*|.*error:|.*: error|Testing started|.*passed|.*failed)"

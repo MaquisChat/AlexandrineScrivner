@@ -21,10 +21,11 @@ struct PlainLayout: View {
 
     // MARK: - The header
 
-    /// The controls sit on a line of their own, above the title, so that neither a long title nor
-    /// large text can push one of them off the screen.
+    /// The controls sit on a line of their own, so that neither a long title nor large text can
+    /// push one of them off the screen. They and the location line stay put; the title is the
+    /// top of the page and scrolls away with it, leaving room to write.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 LayoutSwitch(isMargin: false, action: actions.switchLayout)
                 SessionMenu(session: session, actions: actions)
@@ -38,12 +39,22 @@ struct PlainLayout: View {
                 Spacer(minLength: 0)
                 pill
             }
+            LocationButton(session: session, action: actions.toggleLocation)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
+    }
+
+    /// The top of the page: the title, then who and since when.
+    private var titleBlock: some View {
+        VStack(alignment: .leading, spacing: 4) {
             Button(action: actions.details) {
                 Text(session.page.title)
                     .font(Theme.title(26))
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(3)
                     .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -53,11 +64,7 @@ struct PlainLayout: View {
                 .font(Theme.ui(13))
                 .foregroundStyle(Theme.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            LocationButton(session: session, action: actions.toggleLocation)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 2)
     }
 
     /// The recorder, small: a red dot and the counter while recording; the word for what it is
@@ -111,10 +118,15 @@ struct PlainLayout: View {
     private var page: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
-                    ForEach(PlainBlock.blocks(from: session.rows)) { block in
-                        PlainBlockView(block: block, session: session, onEdit: actions.edit)
+                VStack(alignment: .leading, spacing: 20) {
+                    titleBlock
+                    LazyVStack(alignment: .leading, spacing: 20) {
+                        ForEach(PlainBlock.blocks(from: session.rows)) { block in
+                            PlainBlockView(block: block, session: session, onEdit: actions.edit)
+                        }
                     }
+                    // Outside the part of the page that is built only as it comes into view: a
+                    // box that was thrown away and made again would drop the keyboard.
                     NoteEntry(session: session, focus: focus, size: 19)
                         .id("note-field")
                 }
