@@ -16,43 +16,6 @@ jobs:
       - name: Core tests
         run: swift test --package-path Core
 
-  core-tests-mac:
-    # The same tests on a Mac, where hashing uses Apple's own library instead of our fallback.
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Swift version
-        run: swift --version
-      - name: Core tests
-        run: swift test --package-path Core
-
-  mac-build:
-    # Runs the same script the owner runs on their Mac: setup check, tests, project generation
-    # and an unsigned compile of the test app for a device. The newest Xcode on the machine is used.
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Choose the newest Xcode
-        run: |
-          ls -d /Applications/Xcode*.app
-          newest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-          sudo xcode-select -s "$newest/Contents/Developer"
-          sw_vers
-          xcodebuild -version
-          xcodebuild -showsdks | grep -i ios || true
-      - name: Build
-        env:
-          SCRIVNER_MIN_MACOS: "14"
-          SCRIVNER_MIN_XCODE: "16"
-        run: tools/mac-build.sh
-      - name: Keep the build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-build-log
-          path: build/logs/
-          if-no-files-found: ignore
-
   session-check:
     # The session checker passes the worked example, media tags included, and catches faults
     # put into copies of it.

@@ -1,0 +1,49 @@
+name: Mac checks
+
+# The same things the owner's Mac does, on a Mac hosted by GitHub: the Core tests (where hashing
+# uses Apple's own library), then tools/mac-build.sh, which ends with an unsigned compile of the
+# test app for a device. Kept apart from "Core checks" because hosted Macs are sometimes in short
+# supply, and a job that never got a machine should not look like a failure of the code.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mac-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.machine }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Choose the newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          newest="$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$newest/Contents/Developer"
+          sw_vers
+          uname -m
+          xcodebuild -version
+          swift --version
+          xcodebuild -showsdks | grep -i ios || true
+      - name: Core tests
+        run: swift test --package-path Core
+      - name: Build script
+        env:
+          SCRIVNER_MIN_MACOS: "14"
+          SCRIVNER_MIN_XCODE: "16"
+        run: tools/mac-build.sh
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build-log-${{ matrix.machine }}
+          path: build/logs/
+          if-no-files-found: ignore
