@@ -132,17 +132,21 @@ final class WalkthroughTests: XCTestCase {
     /// Taps something once it is there. If it never appears, that is a failure, and the walk
     /// carries on, so that one missing control does not hide everything after it.
     @discardableResult
-    private func press(_ element: XCUIElement, _ what: String, within seconds: TimeInterval = 30) -> Bool {
+    private func press(_ element: XCUIElement, _ what: String, within seconds: TimeInterval = 30,
+                       byPosition: Bool = false) -> Bool {
         guard element.waitForExistence(timeout: seconds) else {
             XCTFail("\(what) was not there to be tapped")
             describeScreen("missing-" + what.replacingOccurrences(of: " ", with: "-"))
             return false
         }
-        if element.isHittable {
-            element.tap()
+        if byPosition {
+            // For an item in a menu: the simulator cannot say where such an item should be
+            // touched, though it knows where it is. Its middle is touched instead.
+            let place = element.frame
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: place.midX, dy: place.midY)).tap()
         } else {
-            // The system cannot always say where to touch an item in a menu; its middle will do.
-            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            element.tap()
         }
         return true
     }
@@ -423,7 +427,8 @@ final class WalkthroughTests: XCTestCase {
         press(button("session-menu"), "session-menu")
         let stop = button("Stop session")
         XCTAssertTrue(stop.waitForExistence(timeout: 30))
-        press(stop, "Stop session")
+        shot("plain-layout-menu")
+        press(stop, "Stop session", byPosition: true)
         let confirmStop = button("confirm-stop")
         XCTAssertTrue(confirmStop.waitForExistence(timeout: 30))
         press(confirmStop, "confirm-stop")

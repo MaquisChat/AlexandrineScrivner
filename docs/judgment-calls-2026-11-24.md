@@ -11,7 +11,7 @@ This is the complete record, so it uses the names found in the code. The seven a
 3. **A session started with location off says “Location off” as its second line**, and a reopened session never turns location back on by itself.
 4. **The worked example moved from Lisbon to Kathmandu** (UTC+5:45), so that mistakes between local time and UTC cannot hide. That is how the workbench's audio-time fault was found.
 5. **Sessions are left out of iCloud and computer backups.** The design said so and asked you to confirm. The only copies are the one on the phone and the ones you share.
-6. **The plain layout's top line is not as in the mockup.** Its controls sit on a line of their own above the title, so that a long title or large text cannot push one off the screen.
+6. **The plain layout's top is not as in the mockup.** Its controls sit on a line of their own above the title, so that a long title or large text cannot push one off the screen, and the title scrolls away with the page to leave room for writing.
 7. **The app has a dark appearance**, which the mockups did not show. It follows the phone's setting.
 
 ## The session folder format and the core library (branch `foundations`)
@@ -128,11 +128,13 @@ This section is written without code names where it can be, because these are th
 - **Tapping a note opens it for changing or deleting.** A changed note keeps the time it was first written and is marked "edited". Deleting asks first. The plan had no way to change an older note at all. *If wrong:* the page could instead keep the original and show the change beside it.
 - **Pasting several paragraphs makes one note for each.**
 - **A new session opens with the keyboard up.** After Hide, and after switching layout, the keyboard comes back if you were writing.
+- **The typing box is kept alive on a long page.** The automatic walkthrough found that, once a page was longer than the screen, a new line could push the box out of view for a moment, and the keyboard was then lost. This was not in the review; it would have been met in the first real interview.
 - **Participant codes are entered with the title**, by tapping the title. The plan had no way to enter them.
 
 **The two layouts**
 
 - **In the plain layout the controls now sit on a line of their own, above the title.** In the mockup the title and the recorder pill shared a line. With the layout switch and the menu added there was no room for a title, and at large text sizes controls were pushed off the screen. *If wrong:* this is the most visible change from the mockup; say so and it can be laid out differently.
+- **In the plain layout the title is the top of the page and scrolls away with it.** Only the controls and the location line stay put. With the keyboard up, a title that stayed put left room for about three lines of notes. *If wrong:* the title can be pinned again; tapping it to change it works either way.
 - **The plain layout's pill says "Paused" or "Stopped" in words when it is not recording**, and shows whether location is on under the title. Before, the only sign of a pause was a dot changing from red to grey.
 - **The plain layout's three round buttons take their own space at the bottom** instead of floating over the page, so the line being written is never under them.
 - **A finished session shows a Close button in both layouts.**
@@ -172,4 +174,6 @@ This section is written without code names where it can be, because these are th
 - Making the zip for a long session holds the app up for a moment.
 - An untitled session's name uses the 24-hour clock ("2026-11-24 18:23") even when the rows beside it use am and pm.
 - The stand-in recorder counts time only while the app is in front, and writes its silent file in one go at each pause. Both go when the real recorder comes in.
+- At the very largest text sizes the margin layout leaves only a narrow column for notes; the plain layout reads better there.
+- In the margin layout a long title pushes the participant codes off the end of its line. They are still there when the title is tapped.
 - A photo is saved as JPEG only on a device that cannot write HEIC at all; a HEIC write that fails for another reason gives a notice, not a JPEG.
