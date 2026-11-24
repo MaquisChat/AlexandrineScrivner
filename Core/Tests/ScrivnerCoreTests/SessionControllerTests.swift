@@ -137,6 +137,32 @@ final class SessionControllerTests: XCTestCase {
         XCTAssertEqual(p.spanId, c.manifest.spans[0].id); XCTAssertEqual(p.offsetMs, 9_000)
         XCTAssertEqual(c.manifest.problems(finished: false), [])
     }
+    func testAPhotoCanBeAJPEG() throws {
+        // The simulator cannot always write HEIC; the stand-in camera then writes a JPEG.
+        let c = try start()
+        let jpeg = c.preparePhoto(fileExtension: "jpg")
+        XCTAssertEqual(jpeg.file, "photos/photo-0001.jpg")
+        try Data("jpeg".utf8).write(to: jpeg.url); c.photoSaved(jpeg)
+        XCTAssertEqual(c.preparePhoto().file, "photos/photo-0002.heic")       // one run of numbers, whatever the ending
+    }
+    func testIsFinished() throws {
+        let c = try start()
+        XCTAssertFalse(c.isFinished)
+        clock.advance(5); c.pause()
+        XCTAssertFalse(c.isFinished)                                          // closed, but no checksums yet
+        clock.advance(5); c.stop()
+        XCTAssertTrue(c.isFinished)
+        clock.advance(5); c.resume()
+        XCTAssertFalse(c.isFinished)
+    }
+    func testOpenNoteText() throws {
+        let c = try start()
+        XCTAssertNil(c.openNoteText)
+        clock.advance(1); c.typing("half a tho")
+        XCTAssertEqual(c.openNoteText, "half a tho")
+        c.finishNote()
+        XCTAssertNil(c.openNoteText)
+    }
     func testNoPlaceAfterLocationIsSwitchedOff() throws {
         let c = try start()
         clock.advance(5); location.fix(at: clock.now().wall)

@@ -47,6 +47,21 @@ public final class SessionController {
     public var manifest: Manifest { timeline.manifest }
     public var isRecording: Bool { timeline.isRecording }
 
+    /// No span is open and every file has its checksum: the session can be shared as it stands.
+    public var isFinished: Bool {
+        !manifest.spans.contains { $0.endedBy == nil }
+            && !SessionCheck.listedFiles(in: manifest).contains { $0.sha256 == nil }
+    }
+
+    /// The words of the note being written, if one is open.
+    public var openNoteText: String? {
+        guard let open = writer.openNoteId else { return nil }
+        for item in manifest.items {
+            if case .text(let placement, let text, _) = item, placement.id == open { return text }
+        }
+        return nil
+    }
+
     private init(timeline: SessionTimeline, folder: SessionFolder, locationOn: Bool,
                  clock: any SessionClock, audio: any AudioRecording, location: any LocationProviding) {
         self.timeline = timeline
@@ -195,15 +210,16 @@ public final class SessionController {
 
     /// Call when the shutter is pressed. Gives the camera where to write the photo and what moment
     /// and place to write inside it. Nothing is listed in the session until `photoSaved`.
-    public func preparePhoto() -> PhotoRequest {
+    /// The camera writes HEIC; `fileExtension` is for a stand-in that can only write something else.
+    public func preparePhoto(fileExtension: String = "heic") -> PhotoRequest {
         let now = clock.now()
-        let listed = SessionStore.nextFile(.photo, ext: "heic", in: manifest)
+        let listed = SessionStore.nextFile(.photo, ext: fileExtension, in: manifest)
         // "photos/photo-0007.heic" → 7, then skip past numbers already handed out.
         let digits = listed.dropFirst("photos/photo-".count).prefix { $0.isNumber }
         let number = (Int(digits) ?? 1) + photosPrepared
         photosPrepared += 1
         let name = String(number)
-        let file = "photos/photo-" + String(repeating: "0", count: max(0, 4 - name.count)) + name + ".heic"
+        let file = "photos/photo-" + String(repeating: "0", count: max(0, 4 - name.count)) + name + "." + fileExtension
         return PhotoRequest(file: file, url: folder.url(forRelativePath: file), moment: now,
                             place: Place.stamp(from: location.latest, enabled: isLocationOn, now: now.wall))
     }
