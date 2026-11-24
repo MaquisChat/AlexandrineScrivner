@@ -11,7 +11,7 @@ struct SpikeApp: App {
     var body: some Scene {
         WindowGroup {
             TabView {
-                Text("The audio test arrives in the next step.")
+                AudioTestView()
                     .tabItem { Label("Audio test", systemImage: "waveform") }
                 Text("The stylus probe arrives in a later step.")
                     .tabItem { Label("Stylus", systemImage: "pencil.tip") }
