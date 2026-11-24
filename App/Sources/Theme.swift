@@ -47,6 +47,12 @@ enum Theme {
         .system(size: scaled(size), design: .serif)
     }
 
+    /// The face of a session's title: the notes' face, but like the controls it stops growing at
+    /// one and a half times, since a title that fills the screen leaves no room for the page.
+    static func title(_ size: CGFloat) -> Font {
+        .system(size: scaledChrome(size), design: .serif)
+    }
+
     /// The same face for the field notes are typed in.
     static func noteUIFont(_ size: CGFloat) -> UIFont {
         let base = UIFont.systemFont(ofSize: scaled(size))
@@ -77,7 +83,8 @@ struct TrialBanner: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 7)
-                .background(Theme.alarm)
+                // Kept to its own strip: it must not colour the status bar or a title above it.
+                .background(Theme.alarm, ignoresSafeAreaEdges: [])
                 .accessibilityIdentifier("trial-banner")
         }
     }

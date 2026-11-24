@@ -50,7 +50,7 @@ struct NoteField: UIViewRepresentable {
     }
 
     /// A field that has only just been made is not on screen yet; wait, briefly, until it is.
-    private static func giveKeyboard(to view: UITextView) {
+    static func giveKeyboard(to view: UITextView) {
         Task { @MainActor in
             for _ in 0..<20 {
                 if view.window != nil {
@@ -97,6 +97,51 @@ struct NoteField: UIViewRepresentable {
 
         func textViewDidEndEditing(_ textView: UITextView) {
             parent.focus.isWriting = false
+        }
+    }
+}
+
+/// The box an older note is changed in: the whole note, with the cursor at its end and the
+/// keyboard already up. Return makes a new line here, as in any text box.
+struct EditorField: UIViewRepresentable {
+    @Binding var text: String
+    let font: UIFont
+    let color: UIColor
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView()
+        view.delegate = context.coordinator
+        view.backgroundColor = .clear
+        view.font = font
+        view.textColor = color
+        view.text = text
+        view.selectedRange = NSRange(location: (text as NSString).length, length: 0)
+        view.accessibilityIdentifier = "note-editor"
+        view.accessibilityLabel = "Note"
+        NoteField.giveKeyboard(to: view)
+        return view
+    }
+
+    func updateUIView(_ view: UITextView, context: Context) {
+        context.coordinator.parent = self
+        if view.text != text, view.markedTextRange == nil {
+            view.text = text
+        }
+    }
+
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: EditorField
+
+        init(_ parent: EditorField) {
+            self.parent = parent
+        }
+
+        func textViewDidChange(_ textView: UITextView) {
+            parent.text = textView.text ?? ""
         }
     }
 }

@@ -9,6 +9,7 @@ struct ScrivnerApp: App {
         WindowGroup {
             SessionListView()
                 .environmentObject(model)
+                .preferredColorScheme(model.appearanceForWalkthrough)
                 .tint(Theme.accent)
         }
     }

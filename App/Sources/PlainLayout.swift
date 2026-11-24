@@ -40,7 +40,7 @@ struct PlainLayout: View {
             }
             Button(action: actions.details) {
                 Text(session.page.title)
-                    .font(Theme.note(26))
+                    .font(Theme.title(26))
                     .foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)

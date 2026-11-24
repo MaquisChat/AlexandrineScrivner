@@ -2,14 +2,17 @@
 
 Everything below was decided without asking, because the instruction was to proceed as fast as possible. Each entry says what was decided, why, and what it costs if it was the wrong call. None of it is hard to change.
 
-This is the complete record, so it uses the names found in the code. The four at the top are the ones most worth your eye; the rest is here so that nothing decided on your behalf is hidden. Entries headed *Left for later* are small things an independent reviewer noticed that were not fixed.
+This is the complete record, so it uses the names found in the code. The seven at the top are the ones most worth your eye; the rest is here so that nothing decided on your behalf is hidden. Entries headed *Left for later* are small things an independent reviewer noticed that were not fixed.
 
 ## Most worth a look
 
-1. **All three plans below were carried out without waiting for you to read them first.** Each was then read by an independent reviewer, and what the reviewers found was fixed. The plans are in `docs/superpowers/plans/`.
+1. **All four plans below were carried out without waiting for you to read them first.** Each was then read by an independent reviewer, and what the reviewers found was fixed. The plans are in `docs/superpowers/plans/`.
 2. **A session you have not named keeps an empty title** in its file and shows its date and time instead (`2026-11-23 10:42`). The format's own documents say so. If the workbench reads titles, it needs the same rule.
 3. **A session started with location off says “Location off” as its second line**, and a reopened session never turns location back on by itself.
 4. **The worked example moved from Lisbon to Kathmandu** (UTC+5:45), so that mistakes between local time and UTC cannot hide. That is how the workbench's audio-time fault was found.
+5. **Sessions are left out of iCloud and computer backups.** The design said so and asked you to confirm. The only copies are the one on the phone and the ones you share.
+6. **The plain layout's top line is not as in the mockup.** Its controls sit on a line of their own above the title, so that a long title or large text cannot push one off the screen.
+7. **The app has a dark appearance**, which the mockups did not show. It follows the phone's setting.
 
 ## The session folder format and the core library (branch `foundations`)
 
@@ -106,3 +109,67 @@ This is the complete record, so it uses the names found in the code. The four at
 - "blank" is decided two slightly different ways in NoteWriter (zero-width space).
 - InstallWarning.expiry returns nothing for a date with a fraction or a comment before it.
 - The ledger's evidence lines quote the Swift Testing summary line, not the XCTest count.
+
+## The iPhone app's screens (branch `stage-1b`)
+
+This section is written without code names where it can be, because these are the decisions you will see on the phone.
+
+**What the app is at this stage**
+
+- **A red line at the top of every screen says this is a trial version.** The microphone, camera and location are stand-ins, so the app records no sound. The independent reviewer's most serious finding was that nothing on screen said so. *If wrong:* the line is removed in one place when the real hardware goes in.
+- **The clock follows the phone's own 12-hour or 24-hour setting.** The plan listed a setting for this inside the app; there is none. *If wrong:* a setting can be added; the wording code already takes either style.
+- **Notes are set in the system's serif typeface**, not a bundled one. *If wrong:* a typeface can be bundled later.
+- **Dark appearance follows the phone.** The mockups were light only; the dark colours are the same palette turned over. They have been photographed on the hosted Mac but you have not seen or approved them. *If wrong:* the colours are in one file.
+- **Text size follows the phone's setting.** Notes grow all the way to the largest size; buttons and bars grow to one and a half times and then stop, so that none is pushed off the screen.
+
+**Writing**
+
+- **The box you type into was rebuilt after review.** The first version put every note on the page twice; its fix then dropped a note that repeated the one before ("Yes." twice). Return now ends a note directly, and the keyboard stays up for the next one.
+- **Tapping a note opens it for changing or deleting.** A changed note keeps the time it was first written and is marked "edited". Deleting asks first. The plan had no way to change an older note at all. *If wrong:* the page could instead keep the original and show the change beside it.
+- **Pasting several paragraphs makes one note for each.**
+- **A new session opens with the keyboard up.** After Hide, and after switching layout, the keyboard comes back if you were writing.
+- **Participant codes are entered with the title**, by tapping the title. The plan had no way to enter them.
+
+**The two layouts**
+
+- **In the plain layout the controls now sit on a line of their own, above the title.** In the mockup the title and the recorder pill shared a line. With the layout switch and the menu added there was no room for a title, and at large text sizes controls were pushed off the screen. *If wrong:* this is the most visible change from the mockup; say so and it can be laid out differently.
+- **The plain layout's pill says "Paused" or "Stopped" in words when it is not recording**, and shows whether location is on under the title. Before, the only sign of a pause was a dot changing from red to grey.
+- **The plain layout's three round buttons take their own space at the bottom** instead of floating over the page, so the line being written is never under them.
+- **A finished session shows a Close button in both layouts.**
+
+**Hiding**
+
+- **The keyboard shortcut is Command-Shift-B.** The first choice, Command-Shift-H, is the system's own shortcut for the Home Screen.
+- **With VoiceOver on, its own double tap brings the page back.**
+- **The cover has its own decision record**, `docs/adr/0004-the-cover.md`, as the design asked.
+
+**Location**
+
+- **Switching location on asks first, as switching it off does.** A place written into a photo cannot be taken out afterwards.
+- **Opening a session only to read it never changes it.** Before, opening a finished session with the app's location setting off wrote a "Location off" line into it, and the list then said "Changed since it was shared". The line is now written only when something is added (recording starts again, or a photo is taken).
+
+**Safety of what is recorded**
+
+- **A session that was recording when the app was closed is put right as soon as the app opens**, not when you next open that session. It is made complete as it stands, and the list says what was done. It gets no "Stopped" line, because you did not stop it; its page says "Interrupted (the app was closed unexpectedly)". *If wrong:* none seen. You can still open it and carry on recording.
+- **Sessions are left out of iCloud and computer backups.** The design said so and asked you to confirm. *If wrong:* a lost or broken phone loses every session that was not shared. Settings says this in words.
+- **Pressing Stop stays on the session if it could not be finished**, so the reason is seen.
+- **Everything pending is saved when the app leaves the front**, not only on the one-second timer.
+- **Every notice is shown until you press OK**, oldest first. Before, a newer notice replaced an older one.
+- **Zips made for sharing are removed afterwards**, and at every launch, so copies of sessions do not pile up outside the sessions folder.
+- **The switch the automatic walkthrough uses to clear all sessions works only in the simulator.** It cannot be triggered on a real phone.
+
+**How it was checked**
+
+- **Everything is built and walked through on a GitHub-hosted Mac**, because this session cannot compile an iPhone app. The walkthrough is four long walks, not twelve short ones as the plan listed, because each launch takes about a minute there. *If wrong:* an early failure can hide later ones; checks carry on after a failure to limit that.
+- **Screenshots are printed into the run's log as text and read back from there**, because this session cannot fetch GitHub's stored files. *If wrong:* about a megabyte of text in each log. They show stand-in content only.
+- **Each walkthrough step was written together with its screen and only seen to pass**, not first seen to fail, because each round takes about twenty minutes. The reviewer found several checks that could not fail; those were rewritten (the hidden screen is now checked pixel by pixel, for one).
+- **The guide now tells you to use the branch `stage-1b`**, which holds everything so far.
+
+*Left for later:*
+
+- Sharing is not part of the automatic walkthrough; the system's share sheet cannot be driven reliably. To try by hand.
+- What the app switcher shows, whether the home indicator hides, and locking while hidden can only be seen on a real phone.
+- Making the zip for a long session holds the app up for a moment.
+- An untitled session's name uses the 24-hour clock ("2026-11-24 18:23") even when the rows beside it use am and pm.
+- The stand-in recorder counts time only while the app is in front, and writes its silent file in one go at each pause. Both go when the real recorder comes in.
+- A photo is saved as JPEG only on a device that cannot write HEIC at all; a HEIC write that fails for another reason gives a notice, not a JPEG.

@@ -98,8 +98,45 @@ final class SessionControllerFixTests: XCTestCase {
         clock.advance(5); c.stop()
         let again = try reopen(c.folder, locationOn: false)        // the setting was turned off since
         XCTAssertFalse(again.isLocationOn)
-        XCTAssertEqual(markers(again).last, "Location off")        // and the page says so
+        clock.advance(5); location.fix(at: clock.now().wall)
+        let request = try snap(again)
+        XCTAssertNil(request.place)
+        XCTAssertEqual(markers(again).last, "Location off")        // and the page says so, before the photo
+        guard case .marker = again.manifest.items[again.manifest.items.count - 2],
+              case .photo = again.manifest.items[again.manifest.items.count - 1] else {
+            return XCTFail("the line comes before the photo it explains")
+        }
         XCTAssertTrue(again.isFinished)                            // a marker changes no media
+    }
+    func testOpeningASessionOnlyToReadItChangesNothing() throws {
+        let c = try start(locationOn: true)
+        clock.advance(5); c.stop()
+        let before = try Data(contentsOf: c.folder.sessionJSON)
+        let again = try reopen(c.folder, locationOn: false)        // the setting was turned off since
+        clock.advance(60); again.saveIfNeeded()
+        XCTAssertEqual(again.manifest, c.manifest)
+        XCTAssertEqual(try Data(contentsOf: c.folder.sessionJSON), before, "reading a session must not make it look changed")
+        XCTAssertFalse(again.hasUnsavedChanges)
+    }
+    func testTheLocationOffLineComesBeforeRecordingStartsAgain() throws {
+        let c = try start(locationOn: true)
+        clock.advance(5); c.stop()
+        let again = try reopen(c.folder, locationOn: false)
+        clock.advance(5); again.resume()
+        XCTAssertEqual(Array(markers(again).suffix(2)), ["Location off", "Resumed"])
+        XCTAssertEqual(markers(again).filter { $0 == "Location off" }.count, 1)
+        clock.advance(5); again.pause(); clock.advance(5); again.resume()
+        XCTAssertEqual(markers(again).filter { $0 == "Location off" }.count, 1, "it is said once")
+    }
+    func testTurningLocationBackOnBeforeAnythingIsAddedWritesNothing() throws {
+        let c = try start(locationOn: true)
+        clock.advance(5); c.stop()
+        let again = try reopen(c.folder, locationOn: false)
+        clock.advance(5); again.setLocation(on: true)              // the owner wants it for this session after all
+        XCTAssertTrue(again.isLocationOn)
+        XCTAssertEqual(again.manifest, c.manifest, "the session never stopped saying on")
+        clock.advance(5); location.fix(at: clock.now().wall)
+        XCTAssertNotNil(again.preparePhoto().place)
     }
     func testStartLocationIsNotSetLaterOrBackwards() throws {
         // Off at the start and switched on 30 s later: where the session began is not known.

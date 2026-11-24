@@ -63,6 +63,12 @@ public final class SessionController {
     /// The highest photo number ever handed out in this run, so a number is never used twice.
     private var highestPhotoNumber = 0
 
+    /// The app's setting was off when this session was opened, although the session itself last
+    /// said location was on. The page gets its "Location off" line as soon as something is added
+    /// that could have carried a place (recording starts again, or a photo is taken); until then
+    /// nothing is written.
+    private var owesLocationOffLine = false
+
     /// Typing is saved at most this often; everything else is saved as it happens.
     static let typingSaveInterval: Double = 2
     /// A first location reading later than this after the start is no longer where the session began.
@@ -142,7 +148,8 @@ public final class SessionController {
     /// stop it. Anything it lists whose file is gone is taken off the page. A notice says what was done.
     ///
     /// Location is off if the session was switched off when it was last open, or if `locationOn`
-    /// (the app's setting) is off now. `audioLength` reads an audio file's own length in
+    /// (the app's setting) is off now. A session that is only opened and read is left exactly as
+    /// it was, so that reading it never makes it look changed since it was shared. `audioLength` reads an audio file's own length in
     /// milliseconds, or nil if it cannot.
     public static func open(_ folder: SessionFolder, locationOn: Bool, clock: any SessionClock,
                             audio: any AudioRecording, location: any LocationProviding, ids: any IdSource,
@@ -185,11 +192,9 @@ public final class SessionController {
         let controller = SessionController(timeline: timeline, folder: folder, locationOn: sessionSaysOn && locationOn,
                                            clock: clock, audio: audio, location: location)
         controller.notices = notices
-        var changed = !notices.isEmpty
-        if sessionSaysOn && !locationOn {
-            controller.attempt { try controller.timeline.setLocation(enabled: false, at: clock.now()) }
-            changed = true
-        }
+        let changed = !notices.isEmpty
+        // The page is told when something is next added, not now: see `owesLocationOffLine`.
+        controller.owesLocationOffLine = sessionSaysOn && !locationOn
         if wasCutOff {
             // Everything is closed now, so the session is made complete as it stands: it can be
             // copied out and checked without anyone having to open it and press Stop. The owner can
@@ -216,6 +221,7 @@ public final class SessionController {
     /// recording starts as soon as it can (see `interruptionEnded`).
     public func resume() {
         guard !isRecording else { return }
+        writeLocationOffLineIfOwed()
         wantsToRecord = true
         beginSpan()
         save()
@@ -303,6 +309,7 @@ public final class SessionController {
     ///
     /// The camera writes HEIC; `fileExtension` is for a stand-in that can only write something else.
     public func preparePhoto(fileExtension: String = "heic") -> PhotoRequest {
+        writeLocationOffLineIfOwed()
         let now = clock.now()
         // Counting what is listed and what is already on disk; then never below a number handed out before.
         let free = SessionStore.nextFile(.photo, ext: fileExtension, in: manifest, onDiskIn: folder)
@@ -346,9 +353,22 @@ public final class SessionController {
     /// Switches location stamping. Turning it off stops every further stamp and writes a marker;
     /// nothing already saved is removed.
     public func setLocation(on: Bool) {
+        if on && owesLocationOffLine {
+            // Nothing was written about it being off, so there is nothing to take back.
+            owesLocationOffLine = false
+            isLocationOn = true
+            return
+        }
         guard on != isLocationOn else { return }
         isLocationOn = on
         attempt { try timeline.setLocation(enabled: on, at: clock.now()) }
+        save()
+    }
+
+    private func writeLocationOffLineIfOwed() {
+        guard owesLocationOffLine else { return }
+        owesLocationOffLine = false
+        attempt { try timeline.setLocation(enabled: false, at: clock.now()) }
         save()
     }
 

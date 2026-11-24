@@ -24,6 +24,7 @@ struct SessionView: View {
     @ObservedObject var session: SessionModel
     @EnvironmentObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// "margin" (layout A) or "plain" (layout B). Remembered between sessions.
     @AppStorage("layout") private var layout = "margin"
     @StateObject private var focus = WritingFocus()
@@ -102,6 +103,8 @@ struct SessionView: View {
             }
         }
         .background(Theme.paper)
+        // Sizes are worked out when a screen is drawn, so a new text size draws it afresh.
+        .id(typeSize)
         // While covered the page takes no touches and is not read out.
         .allowsHitTesting(!covered)
         .accessibilityHidden(covered)
@@ -255,19 +258,22 @@ struct NoteEditor: View {
     let note: NoteEdit
     let onSave: (String) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
+    @State private var text: String
     @State private var confirmingDelete = false
+
+    init(note: NoteEdit, onSave: @escaping (String) -> Void) {
+        self.note = note
+        self.onSave = onSave
+        _text = State(initialValue: note.text)
+    }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 12) {
-                TextEditor(text: $text)
-                    .font(Theme.note(18))
-                    .scrollContentBackground(.hidden)
+                EditorField(text: $text, font: Theme.noteUIFont(18), color: Theme.inkUI)
                     .padding(8)
                     .background(Theme.strip)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .accessibilityIdentifier("note-editor")
                 Text("The note keeps the time it was first written. The page will show that it was edited.")
                     .font(Theme.ui(13))
                     .foregroundStyle(Theme.secondary)
@@ -301,7 +307,6 @@ struct NoteEditor: View {
             } message: {
                 Text("It is removed from the page and from the session's record. This cannot be undone.")
             }
-            .onAppear { text = note.text }
         }
     }
 }

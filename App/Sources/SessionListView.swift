@@ -5,6 +5,7 @@ import SwiftUI
 struct SessionListView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingSettings = false
     @State private var deleting: SessionSummary?
 
@@ -26,6 +27,8 @@ struct SessionListView: View {
                 newSessionButton
             }
             .background(Theme.paper)
+            // Sizes are worked out when a screen is drawn, so a new text size draws it afresh.
+            .id(typeSize)
             .navigationTitle("Sessions")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -42,7 +45,7 @@ struct SessionListView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
-        .sheet(item: $model.sharing) { zip in
+        .sheet(item: $model.sharing, onDismiss: { ShareSession.clearWaitingRoom() }) { zip in
             ShareSheet(url: zip.url) { completed in
                 model.finishedSharing(zip, completed: completed)
             }
@@ -90,7 +93,7 @@ struct SessionListView: View {
         VStack(spacing: 10) {
             Spacer()
             Text("No sessions yet")
-                .font(Theme.note(24))
+                .font(Theme.title(24))
                 .foregroundStyle(Theme.ink)
             Text("A session records audio while you write notes and take photos. Everything is stamped with its time.")
                 .font(Theme.ui(15))
@@ -174,7 +177,7 @@ private struct SessionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(summary.title)
-                .font(Theme.note(20))
+                .font(Theme.title(20))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(2)
             Text(detail)

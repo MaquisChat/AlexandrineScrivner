@@ -42,7 +42,7 @@ Do this for the iPhone, then again for the iPad. Xcode has to see the device bef
 The builds have to run on your Mac, so Claude needs to be working there.
 
 1. Open the Claude app on the Mac and start a Claude Code session.
-2. Ask Claude to download this project from GitHub (`MaquisChat/AlexandrineScrivner`) into a folder on the Mac and to switch to the branch named `stage-0-spike`.
+2. Ask Claude to download this project from GitHub (`MaquisChat/AlexandrineScrivner`) into a folder on the Mac and to switch to the branch named `stage-1b`. That branch holds everything built so far: the test app, the session checker and the notebook app.
 3. Ask Claude to carry on with the plan in `docs/superpowers/plans/`.
 
 From here Claude runs the builds. The remaining sections are things it will ask you to do at the right moment. Section 8 comes up first, then section 6, then section 7.
@@ -111,6 +111,7 @@ tools/mac-install.sh iphone app
 - A session's recording is silence of the right length. No sound is recorded at all.
 - A photo is a drawn picture that says "Stand-in photo".
 - Nothing is located. The location switch works and is written on the page, but no place is ever stored.
+- The counter only runs while the app is in front. If the phone locks or you switch to another app, the counter falls behind the clock. The real recorder will keep going.
 
 The app says so itself, in a red line at the top of every screen, until the real microphone and camera are in. Those come once the test app's runs (step 6 onwards) have shown which way of recording holds up on your phone.
 

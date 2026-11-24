@@ -5,6 +5,16 @@ import UIKit
 enum ShareSession {
     struct CouldNotZip: Error {}
 
+    /// Where a zip waits while the share sheet is up. Nothing is left here afterwards.
+    static var waitingRoom: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("Sharing", isDirectory: true)
+    }
+
+    /// Removes every zip made for sharing: copies of sessions must not pile up outside Sessions.
+    static func clearWaitingRoom() {
+        try? FileManager.default.removeItem(at: waitingRoom)
+    }
+
     /// A zip of the session's folder, made by the system and put in a temporary place.
     static func zip(of folder: URL) throws -> URL {
         var result: URL?
@@ -12,8 +22,9 @@ enum ShareSession {
         var coordinationError: NSError?
         NSFileCoordinator().coordinate(readingItemAt: folder, options: .forUploading, error: &coordinationError) { zipped in
             // The system's zip only lasts as long as this block, so it is copied out.
-            let target = FileManager.default.temporaryDirectory.appendingPathComponent(folder.lastPathComponent + ".zip")
+            let target = waitingRoom.appendingPathComponent(folder.lastPathComponent + ".zip")
             do {
+                try FileManager.default.createDirectory(at: waitingRoom, withIntermediateDirectories: true)
                 try? FileManager.default.removeItem(at: target)
                 try FileManager.default.copyItem(at: zipped, to: target)
                 result = target

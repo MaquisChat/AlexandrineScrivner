@@ -18,6 +18,10 @@ final class AppModel: ObservableObject {
     /// What was found and put right when the app opened: sessions cut off when it was last closed.
     @Published var launchNotes: [String] = []
 
+    /// Dark, when the automatic walkthrough asks for it (simulator only); otherwise nil, and the
+    /// app follows the phone.
+    let appearanceForWalkthrough: ColorScheme?
+
     /// Where every session's folder lives: Documents/Sessions, visible in the Files app.
     let sessionsRoot: URL
     /// When each session was last shared. Kept beside the sessions folder, never inside a session.
@@ -43,6 +47,7 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.removeObject(forKey: "locationOnForNewSessions")
         }
         standInLocationIsOn = arguments.contains("-uiTestingLocation")
+        appearanceForWalkthrough = arguments.contains("-uiTestingDark") ? .dark : nil
         try? fileManager.createDirectory(at: sessionsRoot, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: support, withIntermediateDirectories: true)
         // Sessions stay on this phone: they are kept out of iCloud and computer backups. Set on the
@@ -51,6 +56,8 @@ final class AppModel: ObservableObject {
         keptOut.isExcludedFromBackup = true
         var root = sessionsRoot
         try? root.setResourceValues(keptOut)
+        // A zip left from a share that was never finished (the app was closed with the sheet up).
+        ShareSession.clearWaitingRoom()
         refreshInstallWarning()
         repairSessionsThatWereCutOff()
         refresh()
@@ -122,7 +129,7 @@ final class AppModel: ObservableObject {
 
     /// The share sheet has closed. If the owner went through with it, the session is marked as shared.
     func finishedSharing(_ zip: SharedZip, completed: Bool) {
-        try? FileManager.default.removeItem(at: zip.url)
+        ShareSession.clearWaitingRoom()
         if completed, let summary = sessions.first(where: { $0.id == zip.sessionId }),
            let data = try? Data(contentsOf: summary.folder.sessionJSON),
            let manifest = try? SessionStore.load(summary.folder) {
