@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(swift *)",
+      "Bash(xcodebuild *)",
+      "Bash(xcrun *)",
+      "Bash(tools/mac-bootstrap.sh *)",
+      "Bash(tools/mac-build.sh *)",
+      "Bash(tools/mac-install.sh *)",
+      "Bash(tools/mac-fetch-results.sh *)",
+      "Bash(bash -n *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git push -u origin *)"
+    ]
+  }
+}
