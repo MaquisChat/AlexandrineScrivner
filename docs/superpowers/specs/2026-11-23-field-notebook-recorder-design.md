@@ -284,9 +284,11 @@ Checked by reading the workbench's import code (`packages/library/src/import/dev
 - **Placement.** Nothing yet places photos, clips or notes beside the transcript. Each audio span is a separate recording with its own transcript.
 - **Ink pictures.** `.png` is a photo type to the workbench, so ink pictures will arrive as field photos. Acceptable for now; the importer will treat them as ink.
 
+**Checked by running the workbench's code (2026-11-24).** The workbench's own device-import scan was run over the worked example, set at UTC+05:45. Photos and clips arrive with the right time, time zone and place. One fault was found on the workbench's side: it reads the time of an audio file wrong by the time-zone offset. The record, and a four-line fix for the workbench, are in `docs/compatibility/workbench-check.md`.
+
 **How compatibility is kept, not assumed:**
 
-- A **session checker** in this repository reads a session folder and verifies it: `session.json` matches the schema, every listed file exists with the right hash, and every media file exposes the tags in 6.3 with values that agree with `session.json` (same instant to within a second, same offset, same location). It reads tags the way the workbench does (the workbench uses ExifTool).
+- A **session checker** in this repository (`scrivner-check`, run with `tools/mac-check-session.sh`) reads a session folder and verifies it: `session.json` matches the schema, every listed file exists with the right hash, and every media file exposes the tags in 6.3 with values that agree with `session.json` (same instant to within a second, same offset, same location). It reads tags the way the workbench does (the workbench uses ExifTool).
 - Each stage's device checklist ends by importing a real session folder into the workbench with its device import and comparing what arrives with the page.
 
 ## 7. How it is built

@@ -22,9 +22,15 @@ public enum Naming {
         let normalized = text.precomposedStringWithCanonicalMapping
 
         // 2. Characters no file system accepts everywhere, and control characters, become "-".
+        //    The invisible characters that override text direction are dropped, and the byte-order
+        //    mark counts as a space, as in the workbench's own cleaning.
         var replaced = String.UnicodeScalarView()
         for scalar in normalized.unicodeScalars {
-            if forbidden.contains(scalar) || scalar.properties.generalCategory == .control {
+            if (0x202A...0x202E).contains(scalar.value) || (0x2066...0x2069).contains(scalar.value) {
+                continue
+            } else if scalar.value == 0xFEFF {
+                replaced.append(" ")
+            } else if forbidden.contains(scalar) || scalar.properties.generalCategory == .control {
                 replaced.append("-")
             } else {
                 replaced.append(scalar)

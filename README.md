@@ -17,4 +17,6 @@ A session folder brought over from the phone can be checked before it goes into 
 tools/mac-check-session.sh ~/Desktop/Sessions
 ```
 
+Whether the workbench can take in what the recorder writes is tested by running the workbench's own import code over the worked example. The latest result is in `docs/compatibility/workbench-check.md`.
+
 Building the app needs a Mac. The one-time setup is described in plain language in `docs/guides/mac-setup.md`.

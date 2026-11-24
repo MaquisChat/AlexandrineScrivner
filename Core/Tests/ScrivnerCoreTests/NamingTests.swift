@@ -38,4 +38,11 @@ final class NamingTests: XCTestCase {
         XCTAssertTrue(name.hasSuffix("… [cdef]"))
         XCTAssertFalse(name.contains("\u{FFFD}"))
     }
+    func testCharactersTheWorkbenchRemovesOrTreatsAsSpaces() {
+        // The workbench's own cleaning drops the invisible characters that change text direction,
+        // and counts the byte-order mark as a space. Ours must agree, or it would rename our folders.
+        XCTAssertEqual(Naming.sanitize("\u{202E}reversed\u{202C} title\u{2066}x\u{2069}"), "reversed titlex")
+        XCTAssertEqual(Naming.sanitize("zero\u{FEFF}width"), "zero width")
+        XCTAssertEqual(Naming.sanitize("kept\u{200E}mark"), "kept\u{200E}mark")   // left-to-right mark stays, as in the workbench
+    }
 }

@@ -1,0 +1,19 @@
+diff --git a/packages/library/src/extract/exif.ts b/packages/library/src/extract/exif.ts
+index 524762a..7779d75 100644
+--- a/packages/library/src/extract/exif.ts
++++ b/packages/library/src/extract/exif.ts
+@@ -73,9 +73,14 @@ export function mediaFromTags(t: Partial<Tags> & Record<string, unknown>): Media
+   const m: MediaMetadata = {};
+   // Capture time: EXIF original, then creation, then QuickTime creation, then the IFD0 date
+   // (on files straight from a camera, such as many DNGs, that is the capture time).
++  // QuickTime's own creation time is UTC, but the reader only knows that for video: for audio
++  // (m4a) it hands the UTC clock reading back as local time with a guessed zone. Apple's
++  // creation-date key states its zone, so when it does, it is the capture time.
++  const statedCreation = dateOf(t.CreationDate)?.zone ? t.CreationDate : undefined;
+   const candidates: Array<[unknown, NonNullable<MediaMetadata["capturedAtSource"]>]> = [
+     [t.SubSecDateTimeOriginal, "original"],
+     [t.DateTimeOriginal, "original"],
++    [statedCreation, "created"],
+     [t.SubSecCreateDate, "created"],
+     [t.CreateDate, "created"],
+     [t.CreationDate, "created"],

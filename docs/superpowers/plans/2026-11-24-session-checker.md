@@ -542,6 +542,7 @@ Check: the example folder is under 2 MB in total.
 
 `scan.mts` is run with the workbench's own `tsx` from inside its checkout. It imports the workbench's `deviceAdapter` (`packages/library/src/import/device.ts`) and `extractExif` (`packages/library/src/extract/exif.ts`) by path, and:
 
+0. (added while executing) compares folder names: `format/naming-cases.json`, written by a Swift test from a list of awkward titles, holds the folder name the recorder gives each; the workbench's `sanitizeSegment` must leave every one unchanged;
 1. runs `deviceAdapter(SESSION_FOLDER, { researcherName: "R" }).scan(...)` to the end and records, for each item, its key, type, title, and each file's mime type, `capturedAt`, `tzOffset` and device;
 2. runs `extractExif` on each media file and records the location it reports;
 3. compares with `session.json`: every listed photo, clip and audio file arrived as exactly one item of the right type (`field-photo`, `field-video`, `field-recording`); nothing else arrived; each `capturedAt` is within a second of the manifest's instant; each `tzOffset` equals the manifest's; each location matches within the Global Constraints' tolerances, and is absent where the manifest has none; no item is a Live Photo pair;
