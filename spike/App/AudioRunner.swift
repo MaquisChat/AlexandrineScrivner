@@ -33,6 +33,7 @@ final class AudioRunner: ObservableObject {
     private var file: AVAudioFile?
     private var run: RunFolder?
     private var framesWritten: Int64 = 0
+    private var writeFailed = false
 
     /// Asks for microphone access if it has not been decided yet.
     static func micAllowed() async -> Bool {
@@ -60,6 +61,7 @@ final class AudioRunner: ObservableObject {
         self.file = newFile
         self.run = run
         self.framesWritten = 0
+        self.writeFailed = false
         stateLock.unlock()
         self.sampleRate = format.sampleRate
         self.log = log
@@ -122,7 +124,7 @@ final class AudioRunner: ObservableObject {
     /// Called on the engine's tap thread, one buffer at a time.
     private func handle(buffer: AVAudioPCMBuffer, time: AVAudioTime) {
         stateLock.lock()
-        guard let file, let run else {
+        guard let file, let run, !writeFailed else {
             stateLock.unlock()
             return
         }
@@ -143,6 +145,7 @@ final class AudioRunner: ObservableObject {
             }
             DispatchQueue.main.async { self.recordedSeconds = seconds }
         } catch {
+            writeFailed = true      // later buffers are dropped until the run is stopped
             stateLock.unlock()
             log?.record("audio-write-failed", String(describing: error))
             DispatchQueue.main.async {
