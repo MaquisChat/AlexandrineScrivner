@@ -1,6 +1,6 @@
 # Market visit
 
-Started 2026-11-23 10:42 (UTC+00:00, Europe/Lisbon)
+Started 2026-11-23 10:42 (UTC+05:45, Asia/Kathmandu)
 Participants: P-014
 
 **10:42** *Recording started*

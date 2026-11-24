@@ -5,15 +5,22 @@ import Foundation
 /// drift away from what the code writes.
 public enum ExampleSession {
     /// Writes the finished example session under `root` and returns its folder.
-    /// Media files are short text placeholders, not real media.
-    public static func write(in root: URL) throws -> SessionFolder {
-        let start = Instant(iso: "2026-11-23T10:42:10.120Z")!
-        let offset = UTCOffset(seconds: 0)
+    ///
+    /// Each media file is copied from `mediaFrom` (a folder holding it at the same relative path)
+    /// when it is there. Otherwise a one-line text placeholder is written, which is enough for
+    /// tests that only need the folder's shape. The copy kept in `format/examples` has real media,
+    /// made by `format/tools/make-example-media.py`.
+    ///
+    /// The session is set where the local clock is not UTC (10:42 in the morning at UTC+05:45),
+    /// so that every conversion between the two is exercised.
+    public static func write(in root: URL, mediaFrom: URL? = nil) throws -> SessionFolder {
+        let start = Instant(iso: "2026-11-23T04:57:10.120Z")!
+        let offset = UTCOffset(seconds: 5 * 3600 + 45 * 60)
         func moment(_ seconds: Double) -> Moment {
             Moment(host: 5000 + seconds, wall: start.adding(milliseconds: Int64(seconds * 1000)),
-                   utcOffset: offset, timeZone: "Europe/Lisbon")
+                   utcOffset: offset, timeZone: "Asia/Kathmandu")
         }
-        let stall = GeoPoint(lat: 38.7223, lon: -9.1393, alt: 12, accuracyM: 5)
+        let stall = GeoPoint(lat: 27.7046, lon: 85.3076, alt: 1300, accuracyM: 5)
 
         var timeline = SessionTimeline(title: "Market visit", participants: ["P-014"], researcher: nil,
                                        device: DeviceInfo(model: "iPhone18,1", os: "iOS 27.1", app: "0.1.0"),
@@ -42,7 +49,12 @@ public enum ExampleSession {
 
         let folder = try SessionStore.create(timeline.manifest, in: root)
         for path in SessionStore.listedFiles(in: timeline.manifest) {
-            try Data("placeholder for \(path)\n".utf8).write(to: folder.url(forRelativePath: path))
+            let prepared = mediaFrom.map { SessionFolder(url: $0).url(forRelativePath: path) }
+            if let prepared, FileManager.default.fileExists(atPath: prepared.path) {
+                try FileManager.default.copyItem(at: prepared, to: folder.url(forRelativePath: path))
+            } else {
+                try Data("placeholder for \(path)\n".utf8).write(to: folder.url(forRelativePath: path))
+            }
         }
         _ = try SessionStore.finalize(timeline.manifest, in: folder)
         return folder
