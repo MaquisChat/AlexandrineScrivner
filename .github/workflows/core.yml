@@ -1,0 +1,31 @@
+name: Core checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-24.04
+    container: swift:6.4.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        run: swift test --package-path Core
+
+  schema-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the schema checker
+        working-directory: format
+        run: npm install --no-audit --no-fund
+      - name: Schema check
+        working-directory: format
+        run: npm run validate
