@@ -12,8 +12,10 @@ XCODEGEN_VERSION="2.46.0"
 # When changing the version, empty this; the next download prints the value to record here.
 XCODEGEN_SHA256="4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
 
-MIN_MACOS="26.6"
-MIN_XCODE="27"
+# What the owner's Mac needs, to build for devices on version 27. The automatic checks build on
+# whatever Mac they are given, so they may lower these two through the environment.
+MIN_MACOS="${SCRIVNER_MIN_MACOS:-26.6}"
+MIN_XCODE="${SCRIVNER_MIN_XCODE:-27}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
